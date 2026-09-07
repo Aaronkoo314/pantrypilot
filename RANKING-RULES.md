@@ -1,31 +1,40 @@
 # Ranking rules
 
-**Owner: Aaron Koo** · Last reviewed 7 September 2026
+**Owner: Aaron Koo** · Rewritten for v2 on 7 September 2026
 
-> ⚠️ **This file describes v1 and is out of date as of the v2 data release.**
-> Rules 3 to 6 — Fitness suitability, Quick & Easy fit, Family Meal fit and Regular fit —
-> describe the four meal preferences, which v2 deleted. Rule 2's Recommended sort is also gone.
-> What v2 actually does: cuisine, weight band, vegetarian and time all EXCLUDE rather than score,
-> and the four sorts are plain orderings over ingredient match, time, calories and price with no
-> weights anywhere. Nothing in the app is scored any more. This file is rewritten next; until
-> then, read it as the record of what v1 did. See [CHANGELOG.md](CHANGELOG.md).
+Everything in this app that decides what a user sees, or in what order, is stated here in a
+plain sentence with its numbers. This file exists because of a conclusion in
+[`REFLECTION.md`](REFLECTION.md): *every generated rule that ranks, scores or filters what users
+see gets a named human owner and one plain-English sentence stating its weights, committed beside
+the code.* In v1, four rules failed that test.
 
-Six rules in this app decide what a user sees and in what order. They were generated during
-the build and shipped without anyone stating what they do. This file states each one in a
-plain sentence, names its weights, and records what it actually produces on the real eleven
-meals — so that the next person to touch one can tell whether it is behaving as intended.
+**The headline for v2 is that nothing is scored any more.** v1 had four meal preferences, each a
+weighted formula over invented nutrition figures, blended 60/40 into a "Recommended" order. All of
+that is deleted. What replaced it is filters that exclude and sorts that order — no weights, no
+blends, nothing that can quietly reorder the list behind the choice the user made.
 
-This exists because of a conclusion in [`REFLECTION.md`](REFLECTION.md): *every generated rule
-that ranks, scores or filters what users see gets a named human owner and one plain-English
-sentence stating its weights, committed beside the code.* Four of these rules failed that test
-until this file was written.
-
-Nothing here is nutrition, dietary or medical advice. Every number is a ranking signal over an
-invented dataset.
+Nothing here is nutrition, dietary or medical advice, and no price here is a real price.
 
 ---
 
-## 1. Ingredient match
+## 1. What the app is built on
+
+| | |
+| --- | --- |
+| Ingredients | 93, in 5 categories; 2 of those have a second level |
+| Meals | 47 — Chinese 17, Western 16, Thai 14 |
+| Calories per serving | 265 to 915 |
+| Price per serving | S$1.39 to S$15.33, median S$5.50 |
+| Vegetarian meals | 14 of 47 |
+
+Four values on every meal are **derived from the recipe and never authored**: calories, the weight
+band, the vegetarian flag and the price. That is the single most important property in the data
+model, because it means a label on a card cannot drift away from the figure printed beside it. v1
+authored calories separately from the macros and they disagreed on 9 of its 11 meals.
+
+---
+
+## 2. Ingredient match — the only number the user can audit
 
 > **A meal's match is the share of its ingredients the user has ticked, as a whole percentage.**
 
@@ -36,189 +45,182 @@ matchPercent = round(100 × ingredients you have ÷ ingredients the recipe needs
 ```
 
 No weighting, no substitutions, no fuzzy matching. A clove of garlic counts exactly as much as
-500 g of beef. The user can audit every result, because the card prints "you have 7 of 7" beside
-the seven items it is counting.
+750 g of pork belly. This is the one figure the user can check without trusting us, because the
+card prints "you have 7 of 11" beside the seven items it is counting.
 
-**Known limit.** The pantry is a boolean: the app knows *whether* you have garlic, never *how
-much*. A meal can read 100% match and still leave you short at the stove.
+**Known limit, unchanged from v1.** The pantry is a boolean: the app knows *whether* you have
+garlic, never *how much*. A meal can read 100% match and still leave you short at the stove.
 
 ---
 
-## 2. Recommended order (the default sort)
+## 3. Calories per serving
 
-> **Recommended order is 60% of a meal's ingredient match plus 40% of its preference fit.**
+> **Calories are the macros: protein × 4 + carbohydrate × 4 + fat × 9, unrounded.**
+
+`src/data/pantryData.js` · `caloriesFromMacros()`
+
+Never authored, and deliberately not rounded. Rounding to the nearest 5 was a v1 defect: the
+whole-dish total multiplied the rounded figure while the whole-dish macros multiplied the exact
+grams, so the two columns on the detail screen disagreed by up to 24 kcal on 9 of 11 meals.
+Keeping the exact value makes them agree at every serving size.
+
+---
+
+## 4. The weight band — what replaced the four preferences
+
+> **A meal is Light under 400 kcal per serving, Medium from 400 to 600 inclusive, and Heavy over
+> 600.**
+
+`src/data/pantryData.js` · `weightBandFor()`
+
+**Where the two thresholds came from.** They are round numbers chosen to split the actual dataset
+into three usable groups, and the dataset was then authored to fill all three. On the current 47
+meals they give **15 light / 17 medium / 15 heavy**. That is the whole justification: no nutrition
+authority sets these lines, and this file says so rather than implying otherwise.
+
+This band is derived, so it is a *description* of the calorie figure next to it, not a second
+opinion about the meal. That is the difference from v1's Fitness score, which was four invented
+constants nobody had reviewed producing a health-adjacent judgement.
+
+**It excludes, it does not score.** Selecting Light removes everything else from the list; it does
+not nudge light meals up an order.
+
+---
+
+## 5. Vegetarian
+
+> **A meal is vegetarian when every one of its ingredients is. The flag lives on the ingredient,
+> never on the meal.**
+
+`src/data/pantryData.js` · `isVegetarian()`
+
+26 of the 93 ingredients are non-vegetarian. Twenty-one are the obvious ones — the meat, poultry
+and seafood. **The five that matter are not meat at all:**
+
+```
+oyster-sauce   fish-sauce   red-curry-paste   green-curry-paste   dried-shrimp
+```
+
+Those five are why this rule is derived from the ingredient list rather than hand-set per meal. A
+filter that looked for meat would call a Thai green curry vegetarian, and a hand-set flag would be
+one careless edit away from doing the same. Deriving it means the label cannot be wrong unless the
+recipe itself is wrong.
+
+**What it claims, and what it does not.** On screen this filter says "no meat, fish or fish-based
+sauces", and that is the whole claim. It is derived from this prototype's own invented ingredient
+data. It is not a certification, it says nothing about dairy, eggs or honey, and halal filtering
+was considered and deliberately rejected — a halal claim depends on slaughter method,
+certification and cross-contamination, none of which an ingredient list records.
+
+---
+
+## 6. Price
+
+> **A meal's price is the sum of each ingredient's quantity multiplied by its unit price, and the
+> per-serving price is that total divided by the base servings.**
+
+`src/data/pantryData.js` · `priceFor()` · and `scaleMeal()` in `mealMatching.js`
+
+Every ingredient carries an invented `unitPrice` in Singapore dollars, per **one** of the single
+unit that ingredient is ever measured in. The unit is declared once, on the ingredient; a recipe
+line carries a bare number. v1 repeated the unit on every recipe line, which is exactly how a
+price model drifts out of agreement with itself.
+
+Each price in the data file carries a comment giving the same figure in a form a person can check:
+
+```js
+{ id: 'pork-belly', ..., unitPrice: 0.026, unit: 'g' },   // S$2.60 / 100 g
+{ id: 'salmon-fillet', ..., unitPrice: 4.2, unit: 'fillets' },  // S$4.20 per fillet
+```
+
+That comment is not decoration. Nobody can eyeball whether `0.026` is right, and these numbers
+reach the screen.
+
+Because price is computed from quantities, it scales with the serving control alongside the
+quantities themselves, and the detail screen can total only the missing items to answer "what will
+this cost me tonight". **The prices are invented.** No shop is named, implied, or surveyed, and
+the app says so on both screens that show a figure.
+
+---
+
+## 7. The filters — all four exclude
 
 `src/utils/mealMatching.js` · `buildRecommendations()`
 
-```js
-recommendedScore = matchPercent * 0.6 + preferenceScore * 0.4
-```
-
-**Why 60/40.** "Can I actually cook this tonight" should beat "does this suit my mood", but not
-erase it. Match ranges over the full 0–100; the preference scores below do not, which means the
-blend is more match-dominated in practice than 60/40 suggests.
-
-**What it actually does.** Match contributes 0–60 points. Preference contributes:
-
-| Preference | Score range on the 11 meals | Contribution at 0.4 | Effective swing |
-| --- | --- | --- | --- |
-| Regular | 57–100 | 22.8–40.0 | 17.2 |
-| Quick & Easy | 10–100 | 4.0–40.0 | 36.0 |
-| Fitness | 49–82 | 19.6–32.8 | **13.2** |
-| Family Meal | 38–100 | 15.2–40.0 | 24.8 |
-
-Fitness moves the recommended order by at most 13 points against match's 60. **Choosing Fitness
-barely changes the default list.** It changes the list properly only under the "Preference fit"
-sort. That is a real weakness, recorded rather than hidden.
-
----
-
-## 3. Fitness suitability
-
-> **A meal's fitness score is 50 points for protein per calorie, 30 for being lighter, and 20 for
-> keeping fat near 30% of its energy.**
-
-`src/data/pantryData.js` · `fitnessSuitabilityFor()`
-
-```js
-proteinPoints = min(protein per 100 kcal ÷ 12, 1) × 50     // 12 g/100 kcal earns full marks
-caloriePoints = clamp((750 − calories) ÷ 400, 0, 1) × 30   // ≤350 kcal full, ≥750 kcal none
-balancePoints = (1 − min(|fatShare − 0.30| ÷ 0.30, 1)) × 20
-```
-
-**Where the four constants came from.** They were generated, not derived from any source. The
-brief required only that Fitness favour meals "relatively higher in protein, lower in calories,
-and nutritionally balanced within the invented dataset", and these weights are one reading of
-that sentence. 12 g per 100 kcal is roughly what a lean grilled fish reaches; 350–750 kcal spans
-a light lunch to a heavy dinner; 30% fat is a midpoint, not a target anyone prescribed.
-
-**What it actually ranks**, on the current data:
-
-| # | Meal | Score | Protein / kcal per serving |
-| --- | --- | --- | --- |
-| 1 | Lemon Herb Salmon & Greens | 82 | 40 g / 394 |
-| 2 | Power Protein Yogurt Bowl | 80 | 26 g / 348 |
-| 3 | Smoky Chicken Wraps | 75 | 33 g / 427 |
-| … | | | |
-| 11 | Ten-Minute Tomato Garlic Pasta | 49 | 16 g / 502 |
-
-That ordering is defensible. Two things about it are not obvious and should be:
-
-- **The spread is only 33 points** (49–82). Nothing scores badly, so the rule separates meals
-  weakly. See rule 2.
-- **The balance term penalises fat-forward cooking as such.** A coconut-milk or ghee-based dish
-  loses most of the 20 balance points regardless of how good it is. On the current Western-leaning
-  eleven meals this rarely bites; if cuisines are ever added, this constant must be re-owned
-  before it silently rates a whole cuisine as less healthy.
-
----
-
-## 4. Quick & Easy fit
-
-> **Quick & Easy scores a meal out of 80 for being fast — full marks at 5 minutes, zero at 75 —
-> plus 20 for being labelled Easy or 10 for Medium.**
-
-`src/utils/mealMatching.js` · `preferenceScore()`, case `quick`
-
-```js
-timeScore = clamp((75 − totalMinutes) ÷ 70, 0, 1) × 80
-easeScore = Easy ? 20 : Medium ? 10 : 0
-```
-
-Produces a clean spread of 10–100 and orders the eleven meals exactly by total time, with
-difficulty breaking ties. Behaves as intended.
-
----
-
-## 5. Family Meal fit
-
-> **Family Meal scores a meal out of 55 for how close its base recipe is to four servings, 35 for
-> being flagged crowd-pleasing, and 10 for being Easy.**
-
-`src/utils/mealMatching.js` · `preferenceScore()`, case `family`
-
-```js
-batchScore = min(baseServings ÷ 4, 1) × 55
-crowdScore = familyFriendly ? 35 : 5
-easeScore  = Easy ? 10 : 5
-```
-
-**In practice this is nearly binary.** The eleven meals land in two clusters: the four-serving
-recipes score 95–100, the two-serving recipes score 38–73. Nothing sits in between, because
-`baseServings` only ever takes the values 2 or 4 in the dataset.
-
-**`familyFriendly` is a hand-set boolean**, not a derived value. It is set true on seven meals and
-false on four (`Lemon Herb Salmon & Greens`, `Crispy Tofu Rainbow Bowl`, `Mushroom Spinach Toast
-Stack`, `Power Protein Yogurt Bowl`) on the judgement that those four are less likely to please a
-mixed table. That judgement is mine and is not defended by any data.
-
----
-
-## 6. Regular fit
-
-> **Regular scores a meal out of 40 for being under 90 minutes, plus 20 for Easy or 10 otherwise,
-> plus a flat 40 given to every meal.**
-
-`src/utils/mealMatching.js` · `preferenceScore()`, default case
-
-```js
-clamp((90 − totalMinutes) ÷ 85, 0, 1) × 40 + (Easy ? 20 : 10) + 40
-```
-
-**This rule does not do what its label promises, and that is worth stating plainly.**
-
-Regular is presented to the user as "a bit of everything" — a neutral option. It is not neutral.
-It is a mild speed ranking with a floor of 50, and it orders the eleven meals **almost identically
-to Quick & Easy**:
-
-| Position | Regular | Quick & Easy |
+| Filter | Removes | Empty means |
 | --- | --- | --- |
-| 1–7 | *identical* | *identical* |
-| 8 | Chickpea Comfort Curry (84) | Crispy Tofu Rainbow Bowl (61) |
-| 9 | Crispy Tofu Rainbow Bowl (78) | Chickpea Comfort Curry (60) |
-| 10–11 | *identical* | *identical* |
+| Cooking time | meals whose prep + cook exceeds the budget | — (always one of three) |
+| Cuisine | meals not in a selected cuisine | no restriction |
+| Weight band | meals not in a selected band | no restriction |
+| Vegetarian only | meals with any non-vegetarian ingredient | off |
+| Only meals I can cook now | meals with any missing ingredient | off |
 
-One swap in eleven positions. A user switching between the two sees essentially the same list,
-which makes one of the four preference buttons close to decorative.
+Cuisine and weight band are multi-select, and an empty selection means *no restriction* rather
+than *nothing*. The interface says that out loud on both screens rather than leaving it to be
+inferred from an empty row.
 
-**Two honest options, neither taken yet:**
-
-1. Make Regular genuinely neutral — return a constant, so the Recommended order collapses to pure
-   ingredient match. Honest, and makes the other three preferences visibly do something.
-2. Give Regular its own meaning — variety, or everyday-ness — and say what that is.
-
-Leaving it as an undeclared duplicate of Quick & Easy is the one option that should not survive.
+None of these scores. That is a deliberate constraint: a filter that also nudged the order would
+be a second, invisible ranking rule sitting behind the sort the user chose.
 
 ---
 
-## 7. The explicit sorts
+## 8. The sorts
 
-`src/utils/mealMatching.js` · `buildRecommendations()` · `sorters`
+`src/utils/mealMatching.js` · `SORT_OPTIONS` and `buildRecommendations()`
 
-These are not scores; they are orderings the user chooses directly. Each has a documented
-tie-break:
+Four sorts. Each is a plain ordering over one value, each can be reversed, and every one breaks
+ties the same way.
 
-| Sort | Orders by | Tie-break |
-| --- | --- | --- |
-| Recommended | `recommendedScore`, descending | none |
-| Ingredient match | `matchPercent`, descending | preference fit |
-| Cooking time | total minutes, ascending | ingredient match |
-| Calories | calories per serving, ascending | ingredient match |
-| Preference fit | preference score, descending | ingredient match |
+| Sort | Orders by | Starts | Reversed reads |
+| --- | --- | --- | --- |
+| Ingredient match *(default)* | `matchPercent` | Best first | Fewest first |
+| Cooking time | prep + cook | Shortest first | Longest first |
+| Calories | calories per serving | Lightest first | Heaviest first |
+| Price per person | price per serving | Cheapest first | Priciest first |
 
-Two filters run before every sort and are not scores either: the time budget removes meals whose
-total time exceeds it, and "only meals I can cook now" removes meals with any missing ingredient.
+**Ties always break toward what the user can actually cook** — descending ingredient match, in
+every sort. It is the same rule in one place rather than four.
+
+**Choosing a new sort starts it in its own natural direction** rather than inheriting the previous
+sort's, because carrying "descending" from match over to price would silently mean "most
+expensive first".
+
+**v1's "Recommended" sort is deleted rather than reimplemented.** With the preferences gone it
+would have been ingredient match under a second name — two controls producing one list, which is
+precisely the defect this file recorded against v1's Regular preference. The fix was deletion.
+
+---
+
+## 9. The two counts that promise something
+
+`src/App.jsx` · `counts`
+
+The readyOnly and vegetarian toggles each carry a count. **Each count applies every filter except
+the one whose own label it sits on**, so a toggle can never advertise a number it is itself about
+to exclude.
+
+This is the general form of the worst defect in v1: a counter on the primary button that read the
+same whether nothing or fourteen ingredients were selected, because it never referenced the
+ingredient list at all. It survived every check and three screenshots. `PROMPTS.md` section 2.14
+records what that cost.
 
 ---
 
 ## Summary for whoever inherits this
 
-| Rule | Behaving as intended? |
-| --- | --- |
-| 1 · Ingredient match | Yes — and it is the only rule the user can audit on screen |
-| 2 · Recommended 60/40 | Yes, with the caveat that preference contributes less than 40% in practice |
-| 3 · Fitness suitability | Order is sensible; spread is narrow; the fat term needs re-owning before cuisines are added |
-| 4 · Quick & Easy | Yes |
-| 5 · Family Meal | Yes, but effectively binary, and rests on a hand-set boolean |
-| 6 · **Regular** | **No — it duplicates Quick & Easy while being labelled neutral** |
-| 7 · The five sorts | Yes |
+| Rule | Derived or authored? | Scores anything? |
+| --- | --- | --- |
+| 2 · Ingredient match | Computed from two lists | No |
+| 3 · Calories | Derived from the macros | No |
+| 4 · Weight band | Derived from calories | No |
+| 5 · Vegetarian | Derived from the ingredients | No |
+| 6 · Price | Derived from quantities × unit prices | No |
+| 7 · The five filters | — | No, all exclude |
+| 8 · The four sorts | — | No, plain orderings |
+| 9 · The two counts | Derived, each excluding its own filter | No |
+
+Two things are authored by a person and therefore need a person to check them: **the macros and
+times on all 47 meals**, and **the 93 unit prices**. Everything else in this table is arithmetic
+on those. That is the shortest honest statement of where the human review has to go, and it is
+the same conclusion `REFLECTION.md` reached about v1 — the cheap work is the code, and the
+expensive work is the judgement nobody can delegate.

@@ -3,15 +3,89 @@
 Every version of PantryPilot, newest first.
 
 The tag [`v1-submitted`](../../releases/tag/v1-submitted) marks the exact state handed in for
-MGMT 6110 Problem Set 1. **[`REFLECTION.md`](REFLECTION.md), [`PROMPTS.md`](PROMPTS.md) and
-[`RANKING-RULES.md`](RANKING-RULES.md) describe that version**, not whatever is currently on
-`main`. To see and run precisely what was graded:
+MGMT 6110 Problem Set 1.
+
+**Which document describes which version:**
+
+| Document | Describes |
+| --- | --- |
+| [`REFLECTION.md`](REFLECTION.md) | v1 as submitted. It is the graded artefact and is not rewritten. |
+| [`PROMPTS.md`](PROMPTS.md) | v1 as submitted, from the first prompt to the first push. Same. |
+| [`RANKING-RULES.md`](RANKING-RULES.md) | **the current app.** Rewritten for v2. |
+| [`README.md`](README.md) | the current app. |
+
+To see and run precisely what was graded:
 
 ```bash
 git checkout v1-submitted
 npm install
 npm run dev
 ```
+
+---
+
+## v2, batch 2 — the whole dataset, plus cuisine, vegetarian and price
+
+*The dataset was replaced rather than extended, and the four meal preferences were deleted. This
+is the batch where a human has to check numbers: 47 meals' macros and times, and 93 unit prices.*
+
+### Added
+
+- **Three cuisines** — Chinese, Western and Thai. Multi-select, and it excludes rather than
+  scores. Japanese, French, Spanish and Italian remain unbuilt.
+- **Vegetarian filter.** Derived from the ingredients, never hand-set per meal. 26 of the 93
+  ingredients are non-vegetarian, and the five that matter are not meat at all — oyster sauce,
+  fish sauce, both curry pastes and dried shrimp. A filter looking only for meat would call a
+  Thai green curry vegetarian.
+- **Price.** Every ingredient carries an invented unit price in Singapore dollars. The card shows
+  price per person; the detail screen shows per person, whole dish, and the cost of just the
+  items you are missing. All of it scales with the serving control. The prices are invented and
+  no shop is named or implied.
+- **Price sorting**, ascending or descending, along with the existing three.
+
+### Changed
+
+- **93 ingredients, up from 30.** Pork, chicken, beef and lamb split into cuts; six kinds of fish
+  and seafood; the pantry split into Western, Chinese and Thai. The ingredient picker gained a
+  second level for the two categories that needed it, so nobody scrolls past twenty-six pantry
+  items to reach the beef.
+- **47 meals, up from 11** — 17 Chinese, 16 Western, 14 Thai, spread 15 light / 17 medium /
+  15 heavy, 14 of them vegetarian. Every ingredient is used by at least one meal, and every
+  recipe line is consumed by a step.
+- **Light / medium / heavy replaces the four meal preferences**, Fitness included. It is derived
+  from calories per serving at 400 and 600, so the label on a card is a description of the figure
+  beside it rather than a second opinion about the meal.
+- **Units are declared once, on the ingredient.** A recipe line carries a bare number. v1
+  repeated the unit on every line, which is how a price model drifts out of agreement with itself.
+- The filter bar keeps sort and the two toggles visible and folds time, cuisine and weight — all
+  answered two taps earlier on setup — behind one disclosure that names what is active.
+- Cards show time, calories, price and servings. v1's "Serves" figure was the same number on
+  every card and its difficulty was Easy on most; both moved to the tag row where they cost no
+  vertical space.
+- The empty state now offers the undo for whichever filter is actually binding, instead of
+  sending the user to another screen to guess.
+
+### Removed
+
+- The four meal preferences, and with them `fitnessSuitability`, `familyFriendly`,
+  `preferenceScore` and `isStrongPreferenceFit`.
+- **The "Recommended" sort.** With preferences gone it was ingredient match under a second name —
+  two controls producing one list, which is exactly the defect `RANKING-RULES.md` recorded against
+  v1's Regular preference. Deleted rather than reimplemented.
+
+### Note on how the data was produced
+
+The 47 meals were authored by three agents, one per cuisine, and then checked by three more
+against the recipes. All three cuisines failed the first check, and the failures were not the kind
+a schema catches: ingredients listed but never used by a step, macros that contradicted the
+quantities, near-duplicate dishes, and steps calling for salt that was not in the ingredient list.
+Structure and distribution were already perfect at that point, which is the useful part —
+**"the numbers are compliant" and "the thing is right" turned out to be different questions.**
+
+One of the failures was mine. The brief asked for at least five meals in each of three calorie
+bands from a set of thirteen, which is arithmetically impossible, and two of the three authors
+quietly shaved fat figures to protect the quota rather than saying so. The third said so. The
+second pass told them to move a meal's band rather than shave a macro, which is what exposed it.
 
 ---
 

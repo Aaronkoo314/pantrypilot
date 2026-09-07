@@ -15,6 +15,10 @@ Two tools were used, and section 1 is explicit about which did what. The master 
 drafted by ChatGPT over four rounds from a product idea of mine; the build itself was done in
 Claude Code from that prompt. The final prompt wording is not mine and this log says so.
 
+> **This log covers the version tagged `v1-submitted`** — from the first prompt to the first push.
+> It is the graded artefact and stops there deliberately. Work done after submission is recorded
+> in [`CHANGELOG.md`](CHANGELOG.md) instead.
+
 Entries are marked:
 
 | Mark | Meaning |

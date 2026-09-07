@@ -12,25 +12,27 @@ Built for MGMT 6110 Human-AI Collaboration, Singapore Management University.
 - [PROMPTS.md](PROMPTS.md) - the working log of how this was built, including the prompts and steps that went wrong.
 - [REFLECTION.md](REFLECTION.md) - the five-question reflection, plus the further-action roadmap.
 - [RANKING-RULES.md](RANKING-RULES.md) - what every rule that ranks, scores or filters the meal list does, with its weights and a named owner.
-- [CHANGELOG.md](CHANGELOG.md) - every version, newest first.
+- [CHANGELOG.md](CHANGELOG.md) - every version, newest first, and which document describes which.
 
-> **Which version the documents describe.** The three documents above describe the state tagged
-> `v1-submitted`, which is what was handed in for Problem Set 1. `main` has moved on since.
-> `git checkout v1-submitted` gives you exactly the graded version; [CHANGELOG.md](CHANGELOG.md)
-> lists what changed after it.
+> **Which version the documents describe.** `PROMPTS.md` and `REFLECTION.md` describe the state
+> tagged `v1-submitted`, which is what was handed in for Problem Set 1; they are the graded
+> artefacts and are not rewritten. `RANKING-RULES.md` and this file describe the current app.
+> `git checkout v1-submitted` gives you exactly the graded version, and
+> [CHANGELOG.md](CHANGELOG.md) lists everything that changed after it.
 
 ## The user journey
 
-1. **Meal Setup** - tick the ingredients in your kitchen, say how many people are eating,
-   how much time you have (15 / 30 / 60+ minutes), and what kind of meal you want
-   (Regular, Quick & Easy, Fitness, Family Meal). Press **Find Meals**.
-2. **Meal Recommendations** - a ranked list of meal cards showing ingredient match,
-   time, servings, calories per person, difficulty, category and anything you are missing.
-   Filter by time and preference, sort by match / time / calories / preference fit, or
-   show only meals that need no extra shopping.
-3. **Meal Detail** - the full recipe: what you have, what you still need, prep / cook /
-   total time, calories per person and in total, protein / carbs / fat, a serving-size
-   control that rescales every quantity, and step-by-step instructions.
+1. **Meal Setup** - tick the ingredients in your kitchen from 93, grouped and searchable, with
+   meat and pantry items on a second level; say how many people are eating; pick a time budget
+   (15 / 30 / 60+ minutes); and optionally narrow by cuisine (Chinese, Western, Thai) and by how
+   heavy you want it (Light, Medium, Heavy). Press **Find Meals**.
+2. **Meal Recommendations** - meal cards showing ingredient match, time, calories per person,
+   price per person and servings. Sort by match, time, calories or price, in either direction;
+   filter to vegetarian only, or to meals that need no extra shopping.
+3. **Meal Detail** - the full recipe: what you have, what you still need and what the missing
+   items cost, prep / cook / total time, price per person and for the whole dish, calories per
+   person and in total, protein / carbs / fat, a serving-size control that rescales every
+   quantity and every price, and step-by-step instructions.
 
 All three screens live in one page, so moving between them never reloads the browser.
 
@@ -62,8 +64,10 @@ output directory `dist`).
   health, dietary or medical advice, and the app says so on screen.
 - The name PantryPilot was chosen independently for this coursework prototype. No
   affiliation with any similarly named product or service is implied.
-- The Fitness preference ranks meals only by the dataset's own nutrition signal:
-  higher protein per calorie, lower calories per serving, and reasonably balanced macros.
+- Prices are invented sample figures in Singapore dollars. They are not real shop prices, and
+  no shop is named or implied.
+- Nothing in the app is scored. Cuisine, weight, vegetarian, time and "can cook now" all exclude;
+  the four sorts are plain orderings with no weights. See [RANKING-RULES.md](RANKING-RULES.md).
 
 ## Files
 
@@ -75,12 +79,12 @@ output directory `dist`).
 | `src/main.jsx` | Mounts `<App />` into `#root` and loads the stylesheet. |
 | `src/components/SplashScreen.jsx` | The cover screen. Three-second hold with a state-driven progress bar, skippable, skipped under reduced-motion. |
 | `src/App.jsx` | Root component. Holds setup, filter and screen state, computes the recommendation list, and switches between the three screens without reloading. |
-| `src/data/pantryData.js` | **All invented data:** 30 ingredients, 11 meals with quantities, servings, times, macros, difficulty, category and derived fitness suitability, plus the time and preference option lists. |
-| `src/utils/mealMatching.js` | Pure logic: ingredient matching, preference scoring, filtering, sorting, serving scaling and formatting. |
-| `src/components/MealSetup.jsx` | Screen 1. People, time and preference controls plus the Find Meals button. |
-| `src/components/IngredientPicker.jsx` | Screen 1's ingredient index: search, an echo of your picks, and collapsible category groups carrying item and selected counts. |
+| `src/data/pantryData.js` | **All invented data:** 93 ingredients with unit, price and vegetarian flag, and 47 meals across three cuisines with quantities, servings, times, macros, difficulty and category. Calories, weight band, vegetarian status and price are derived here, never authored. |
+| `src/utils/mealMatching.js` | Pure logic: ingredient matching, filtering, sorting, serving scaling, pricing and formatting. |
+| `src/components/MealSetup.jsx` | Screen 1. People, time, cuisine and weight controls plus the Find Meals button. |
+| `src/components/IngredientPicker.jsx` | Screen 1's ingredient index: search, an echo of your picks, and collapsible categories with a second level for meat cuts and pantry cuisines, every header carrying item and selected counts. |
 | `src/components/MealRecommendations.jsx` | Screen 2. Setup summary, filter bar, result count, meal list and empty state. |
-| `src/components/FilterBar.jsx` | Time / preference filters, sort dropdown with an ascending/descending control, and the "only meals I can cook now" toggle. |
-| `src/components/MealCard.jsx` | One meal summary card: name, match line and meter, time, servings, calories, difficulty, tags and missing ingredients. |
-| `src/components/MealDetail.jsx` | Screen 3. Serving control, have / need ingredient lists, times, nutrition, steps and the back button. |
+| `src/components/FilterBar.jsx` | Sort dropdown with an ascending/descending control, the vegetarian and "only meals I can cook now" toggles, and a disclosure holding time, cuisine and weight. |
+| `src/components/MealCard.jsx` | One meal summary card: name, match line and meter, time, calories, price, servings, tags and missing ingredients. |
+| `src/components/MealDetail.jsx` | Screen 3. Serving control, have / need ingredient lists with per-line prices, times, cost, nutrition, steps and the back button. |
 | `src/styles.css` | All styling. Mobile-first, warm palette, 48px minimum touch targets. |

@@ -14,6 +14,13 @@ MGMT 6110 Human-AI Collaboration, Singapore Management University.
 Every number, quoted prompt and file path below comes from the build session itself and has been
 re-checked against the repository. The working log is in [`PROMPTS.md`](PROMPTS.md).
 
+> **This document describes the version tagged `v1-submitted`, not the app currently on `main`.**
+> It is the graded artefact and is deliberately left as it was submitted. v2 replaced the dataset
+> and deleted the four meal preferences, so the Fitness formula this reflection spends most of Q2
+> on no longer exists in the running app — which is rather the point of Q5's third pointer.
+> [`CHANGELOG.md`](CHANGELOG.md) lists what changed; `git checkout v1-submitted` runs what was
+> graded.
+
 ---
 
 ## Q1 — Who the users are, and what changes for them
