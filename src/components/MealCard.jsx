@@ -5,13 +5,6 @@ import {
   isStrongPreferenceFit,
 } from '../utils/mealMatching.js';
 
-function matchTone(percent) {
-  if (percent === 100) return 'match-full';
-  if (percent >= 60) return 'match-good';
-  if (percent >= 30) return 'match-some';
-  return 'match-low';
-}
-
 /**
  * Section component: one meal summary card on the recommendations screen.
  */
@@ -32,12 +25,19 @@ export default function MealCard({ meal, servings, preferenceId, onOpen }) {
         </div>
       </div>
 
-      <div className={`match-bar ${matchTone(meal.matchPercent)}`}>
-        <div className="match-fill" style={{ width: `${meal.matchPercent}%` }} />
-        <span className="match-text">
-          {meal.matchPercent}% match &middot; you have {meal.haveCount} of{' '}
-          {meal.totalIngredientCount}
+      <p className="match-line">
+        <span>{meal.matchPercent}% match</span>
+        <span className="match-count">
+          you have {meal.haveCount} of {meal.totalIngredientCount}
         </span>
+      </p>
+      {/* The line above states the figure; the meter only echoes it, so it is
+          hidden from assistive technology rather than repeated. */}
+      <div
+        className={`meter ${meal.isReadyToCook ? 'meter-ready' : ''}`}
+        aria-hidden="true"
+      >
+        <div className="meter-fill" style={{ width: `${meal.matchPercent}%` }} />
       </div>
 
       <dl className="stat-row">
