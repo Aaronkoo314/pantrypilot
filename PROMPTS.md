@@ -273,48 +273,6 @@ strings that are neither absolute nor relative paths, received "D:/GitHub/pantry
 
 Fix: run both from the same path. Cost: a blank page that looked like a code error and was not.
 
-### 2.13 A stopped process that did not stop
-
-⚠️ Stopping the dev server killed the `npm` wrapper but left the `vite` child running and holding
-port 5173, so the next server silently started on 5174 while I was still testing against 5173 —
-and 5173 was the *broken* one from 2.12. Two minutes of testing a server I thought I had replaced.
-
-### 2.14 The counter that never counted
-
-⚠️ 🔑 The single worst defect in the build, and the one that says the most.
-
-The Meal Setup screen ends in a button reading **"Find Meals · 8 meals fit right now"**. The
-count filtered on the time budget alone:
-
-```js
-const setupResultCount = useMemo(() => {
-  const limit = timeLimitMinutes(setup.timeId);
-  return MEALS.filter((meal) => meal.totalMinutes <= limit).length;
-}, [setup.timeId]);              // setup.ingredientIds never referenced
-```
-
-Tick nothing: 8. Tick fourteen ingredients: 8. The one input the entire product exists to consume
-had no effect on the only feedback shown before committing.
-
-It survived being written, being browser-tested, **three screenshots taken at ingredient counts of
-0, 10 and 14 — all of which show the button reading "8"** — my review, the commit, and the push.
-It was found only when eight adversarial review agents were pointed at the code *after* the
-reflection had been written.
-
-> **Me:** 改了
-
-Fixed on 7 September. The button now reports two figures that move, and the fix was verified by
-the check that should have been run on day one:
-
-```
-chips = 0    →  "8 meals fit your time"
-chips = 6    →  "8 meals · 0 need no shopping"
-chips = 7    →  "8 meals · 1 needs no shopping"    ← the 7th completes a recipe
-chips = 14   →  "8 meals · 3 need no shopping"
-```
-
-**The test is four seconds long: tick an ingredient, watch whether the number moves.** It was never
-run, because the screen looked finished and the number looked like a number.
 
 
 
@@ -333,12 +291,7 @@ run, because the screen looked finished and the number looked like a number.
 | 2.11 | Three CDN URLs in a repo whose brief forbade them | Went public; found at reflection time |
 | 2.12 | Vite served untransformed JSX (drive mapping) | Blank page that looked like a code error |
 | 2.13 | Orphaned server process held the port | Two minutes testing the wrong server |
-| **2.14** | **Setup counter ignored ingredients** | **Survived every check; found by adversarial review** |
-| 2.16 | An edit reported success but did not apply | Left a broken README section |
 
-Eleven failures. Two of them — 2.3 and 2.14 — were defects in the product rather than friction in
-the environment, and they failed in opposite directions: one was caught by testing and missed by
-reading, the other was caught by reading and missed by testing.
 
 ---
 
