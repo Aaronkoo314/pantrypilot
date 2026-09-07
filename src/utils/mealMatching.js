@@ -5,13 +5,32 @@
 
 import { INGREDIENT_BY_ID, TIME_OPTIONS } from '../data/pantryData.js';
 
+/*
+ * `directional` marks the sorts where reversing the order is a question a user
+ * actually asks - shortest or longest, lightest or heaviest. Recommended and
+ * Preference fit are scores, and "least recommended first" is not a request
+ * anyone makes, so those two stay fixed and the direction control hides.
+ *
+ * `ascLabel` / `descLabel` name the direction in the user's terms rather than
+ * as an arrow, because "Shortest first" is unambiguous and an up arrow is not.
+ */
 export const SORT_OPTIONS = [
-  { id: 'recommended', label: 'Recommended' },
-  { id: 'match', label: 'Ingredient match' },
-  { id: 'time', label: 'Cooking time' },
-  { id: 'calories', label: 'Calories' },
-  { id: 'preference', label: 'Preference fit' },
+  { id: 'recommended', label: 'Recommended', directional: false },
+  { id: 'match', label: 'Ingredient match', directional: true, ascLabel: 'Fewest first', descLabel: 'Best first' },
+  { id: 'time', label: 'Cooking time', directional: true, ascLabel: 'Shortest first', descLabel: 'Longest first' },
+  { id: 'calories', label: 'Calories', directional: true, ascLabel: 'Lightest first', descLabel: 'Heaviest first' },
+  { id: 'preference', label: 'Preference fit', directional: false },
 ];
+
+export const SORT_BY_ID = SORT_OPTIONS.reduce((map, option) => {
+  map[option.id] = option;
+  return map;
+}, {});
+
+/** The direction a sort starts in the first time it is chosen. */
+export function defaultSortDir(sortId) {
+  return sortId === 'time' || sortId === 'calories' ? 'asc' : 'desc';
+}
 
 /* ---------------------------------------------------------------- *
  * Ingredient matching
@@ -114,10 +133,10 @@ export function timeLimitMinutes(timeId) {
 /**
  * Turn the raw meal list into the ranked list shown on the recommendations screen.
  *
- * settings: { ownedIds, timeId, preferenceId, sortId, readyOnly }
+ * settings: { ownedIds, timeId, preferenceId, sortId, sortDir, readyOnly }
  */
 export function buildRecommendations(meals, settings) {
-  const { ownedIds, timeId, preferenceId, sortId, readyOnly } = settings;
+  const { ownedIds, timeId, preferenceId, sortId, sortDir, readyOnly } = settings;
   const owned = new Set(ownedIds);
   const maxMinutes = timeLimitMinutes(timeId);
 
@@ -137,16 +156,27 @@ export function buildRecommendations(meals, settings) {
     .filter((meal) => meal.totalMinutes <= maxMinutes)
     .filter((meal) => (readyOnly ? meal.isReadyToCook : true));
 
-  const sorters = {
-    recommended: (a, b) => b.recommendedScore - a.recommendedScore,
-    match: (a, b) => b.matchPercent - a.matchPercent || b.preferenceScore - a.preferenceScore,
-    time: (a, b) => a.totalMinutes - b.totalMinutes || b.matchPercent - a.matchPercent,
-    calories: (a, b) =>
-      a.caloriesPerServing - b.caloriesPerServing || b.matchPercent - a.matchPercent,
-    preference: (a, b) => b.preferenceScore - a.preferenceScore || b.matchPercent - a.matchPercent,
+  // Each sort names the value it orders by. Direction is applied once, below,
+  // so there is one rule for it instead of five.
+  const keys = {
+    recommended: (meal) => meal.recommendedScore,
+    match: (meal) => meal.matchPercent,
+    time: (meal) => meal.totalMinutes,
+    calories: (meal) => meal.caloriesPerServing,
+    preference: (meal) => meal.preferenceScore,
   };
 
-  return scored.sort(sorters[sortId] || sorters.recommended);
+  const keyOf = keys[sortId] || keys.recommended;
+  const option = SORT_BY_ID[sortId] || SORT_BY_ID.recommended;
+  // A non-directional sort ignores whatever direction is being carried.
+  const dir = option.directional && sortDir === 'asc' ? 1 : -1;
+
+  return scored.sort((a, b) => {
+    const primary = (keyOf(a) - keyOf(b)) * dir;
+    if (primary !== 0) return primary;
+    // Ties always break toward what the user can actually cook, in every sort.
+    return b.matchPercent - a.matchPercent;
+  });
 }
 
 /* ---------------------------------------------------------------- *

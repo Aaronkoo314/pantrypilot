@@ -1,11 +1,15 @@
 import { PREFERENCE_OPTIONS, TIME_OPTIONS } from '../data/pantryData.js';
-import { SORT_OPTIONS } from '../utils/mealMatching.js';
+import { SORT_OPTIONS, SORT_BY_ID } from '../utils/mealMatching.js';
 
 /**
  * Section component: the filter and sort controls above the meal list.
  */
 export default function FilterBar({ filters, onChange, readyCount }) {
-  const { timeId, preferenceId, sortId, readyOnly } = filters;
+  const { timeId, preferenceId, sortId, sortDir, readyOnly } = filters;
+
+  const sort = SORT_BY_ID[sortId] || SORT_BY_ID.recommended;
+  const isAsc = sortDir === 'asc';
+  const nextDir = isAsc ? 'desc' : 'asc';
 
   return (
     <section className="card filter-card" aria-label="Filter and sort meals">
@@ -47,18 +51,38 @@ export default function FilterBar({ filters, onChange, readyCount }) {
         <label className="filter-label" htmlFor="sort-select">
           Sort by
         </label>
-        <select
-          id="sort-select"
-          className="select"
-          value={sortId}
-          onChange={(event) => onChange({ sortId: event.target.value })}
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <div className="sort-row">
+          <select
+            id="sort-select"
+            className="select"
+            value={sortId}
+            onChange={(event) => onChange({ sortId: event.target.value })}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          {/* Only the sorts where reversing is a real question get the control.
+              The button states the order you are in; tapping gives the other. */}
+          {sort.directional && (
+            <button
+              type="button"
+              className="sort-dir"
+              onClick={() => onChange({ sortDir: nextDir })}
+              aria-label={`Sorted ${isAsc ? sort.ascLabel : sort.descLabel}. Switch to ${
+                isAsc ? sort.descLabel : sort.ascLabel
+              }.`}
+            >
+              <span className="sort-dir-arrow" aria-hidden="true">
+                {isAsc ? '↑' : '↓'}
+              </span>
+              <span className="sort-dir-text">{isAsc ? sort.ascLabel : sort.descLabel}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <button

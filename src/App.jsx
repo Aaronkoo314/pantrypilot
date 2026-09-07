@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
+import SplashScreen from './components/SplashScreen.jsx';
 import MealSetup from './components/MealSetup.jsx';
 import MealRecommendations from './components/MealRecommendations.jsx';
 import MealDetail from './components/MealDetail.jsx';
 import { MEALS, MEAL_BY_ID } from './data/pantryData.js';
-import { buildRecommendations, matchMeal, timeLimitMinutes } from './utils/mealMatching.js';
+import {
+  buildRecommendations,
+  defaultSortDir,
+  matchMeal,
+  timeLimitMinutes,
+} from './utils/mealMatching.js';
 
 /**
  * PantryPilot root.
@@ -12,6 +18,7 @@ import { buildRecommendations, matchMeal, timeLimitMinutes } from './utils/mealM
  * so moving between them never reloads the browser.
  */
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [screen, setScreen] = useState('setup');
   const [activeMealId, setActiveMealId] = useState(null);
 
@@ -24,6 +31,7 @@ export default function App() {
 
   const [listOptions, setListOptions] = useState({
     sortId: 'recommended',
+    sortDir: 'desc',
     readyOnly: false,
   });
 
@@ -36,6 +44,7 @@ export default function App() {
     timeId: setup.timeId,
     preferenceId: setup.preferenceId,
     sortId: listOptions.sortId,
+    sortDir: listOptions.sortDir,
     readyOnly: listOptions.readyOnly,
   };
 
@@ -46,6 +55,7 @@ export default function App() {
         timeId: setup.timeId,
         preferenceId: setup.preferenceId,
         sortId: listOptions.sortId,
+        sortDir: listOptions.sortDir,
         readyOnly: listOptions.readyOnly,
       }),
     [setup, listOptions]
@@ -83,6 +93,11 @@ export default function App() {
 
   function updateFilters(patch) {
     const { timeId, preferenceId, ...rest } = patch;
+    // Picking a new sort starts it in its own natural direction rather than
+    // inheriting the previous sort's, which would silently mean something else.
+    if (rest.sortId && rest.sortDir === undefined) {
+      rest.sortDir = defaultSortDir(rest.sortId);
+    }
     if (timeId || preferenceId) {
       updateSetup({ ...(timeId ? { timeId } : {}), ...(preferenceId ? { preferenceId } : {}) });
     }
@@ -96,39 +111,52 @@ export default function App() {
     setScreen('detail');
   }
 
+  // The cover sits above whatever screen is already mounted behind it, so
+  // nothing has to load again once it fades.
+  const cover = showSplash ? <SplashScreen onDone={() => setShowSplash(false)} /> : null;
+
   if (screen === 'detail' && activeMeal) {
     return (
-      <MealDetail
-        key={activeMeal.id}
-        meal={activeMeal}
-        ownedIds={setup.ingredientIds}
-        initialServings={setup.people}
-        onBack={() => setScreen('results')}
-      />
+      <>
+        {cover}
+        <MealDetail
+          key={activeMeal.id}
+          meal={activeMeal}
+          ownedIds={setup.ingredientIds}
+          initialServings={setup.people}
+          onBack={() => setScreen('results')}
+        />
+      </>
     );
   }
 
   if (screen === 'results') {
     return (
-      <MealRecommendations
-        meals={recommendations}
-        readyCount={readyCount}
-        setup={setup}
-        filters={filters}
-        onFilterChange={updateFilters}
-        onOpenMeal={openMeal}
-        onEditSetup={() => setScreen('setup')}
-      />
+      <>
+        {cover}
+        <MealRecommendations
+          meals={recommendations}
+          readyCount={readyCount}
+          setup={setup}
+          filters={filters}
+          onFilterChange={updateFilters}
+          onOpenMeal={openMeal}
+          onEditSetup={() => setScreen('setup')}
+        />
+      </>
     );
   }
 
   return (
-    <MealSetup
-      setup={setup}
-      onChange={updateSetup}
-      onFindMeals={() => setScreen('results')}
-      resultCount={setupResultCount}
-      readyCount={readyCount}
-    />
+    <>
+      {cover}
+      <MealSetup
+        setup={setup}
+        onChange={updateSetup}
+        onFindMeals={() => setScreen('results')}
+        resultCount={setupResultCount}
+        readyCount={readyCount}
+      />
+    </>
   );
 }

@@ -24,6 +24,13 @@
   box-sizing: border-box;
 }
 
+/* `display: grid` on a collapsed panel beats the hidden attribute's own
+   display: none, so hidden has to win explicitly. Found by collapsing an
+   ingredient group and watching the chips stay on screen. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
@@ -193,9 +200,99 @@ button {
 }
 
 .chip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+/* Your picks are few and read better packed than gridded. */
+.picked-grid {
   display: flex;
   flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.picked {
+  margin: 14px 0 6px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+}
+
+.picked-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  margin-bottom: 8px;
+}
+
+.picked-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.picked .text-button {
+  min-height: 32px;
+  padding: 0;
+}
+
+/* Group headers double as the index: five of these are scannable, sixty chips
+   are not, and the counts stop a collapsed card from reading as an empty one. */
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  text-align: left;
+}
+
+.group-header:disabled {
+  cursor: default;
+}
+
+.group-caret {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--paprika-soft);
+  color: var(--paprika-dark);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.group-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.group-count {
+  flex: none;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.group-selected {
+  color: var(--herb);
+  font-weight: 600;
 }
 
 .chip {
@@ -866,6 +963,136 @@ button {
   color: var(--ink-faint);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.sort-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.sort-row .select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sort-dir {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.sort-dir-arrow {
+  font-size: 15px;
+  color: var(--paprika-dark);
+}
+
+@media (max-width: 26rem) {
+  .sort-dir-text { display: none; }
+  .sort-dir { padding: 0 14px; }
+}
+
+/* ---------------- cover screen ---------------- */
+
+/* The hold has to look like something is happening, so the bar below the
+   wordmark is a determinate 3s fill rather than an indeterminate shimmer.
+   Timing here and HOLD_MS/FADE_MS in SplashScreen.jsx must agree. */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--cream);
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 450ms ease;
+}
+
+.splash-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 22rem;
+}
+
+.splash-brand {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paprika-dark);
+}
+
+.splash-line {
+  margin: 10px 0 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.splash-track {
+  width: 168px;
+  height: 4px;
+  margin: 28px 0 0;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+/* Width comes from state in SplashScreen.jsx - see the note in that file.
+   Deliberately no transition and no keyframe: both are driven by a clock this
+   bar cannot verify, and when that clock is frozen the bar renders at zero
+   width while reporting itself as animating. Stepping every 50ms depends on
+   nothing but the timer that also dismisses the cover. */
+.splash-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--paprika-dark);
+}
+
+/* Shown once the bar has visibly moved, gated on the same progress state as
+   the bar itself rather than on a delayed keyframe - a frozen animation clock
+   would otherwise leave this permanently invisible. */
+.splash-skip {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--ink-faint);
+  visibility: hidden;
+}
+
+.splash-skip-shown {
+  visibility: visible;
+}
+
+/* Anyone asking for less motion is sent straight to the app by
+   SplashScreen.jsx; this only covers the frame before that runs. */
+@media (prefers-reduced-motion: reduce) {
+  .splash { display: none; }
 }
 
 /* ---------------- wider screens ---------------- */
