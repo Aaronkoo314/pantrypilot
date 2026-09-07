@@ -7,6 +7,11 @@ A front-end prototype that helps non-professional home cooks answer one question
 
 Built for MGMT 6110 Human-AI Collaboration, Singapore Management University.
 
+## Coursework documents
+
+- [PROMPTS.md](PROMPTS.md) - the working log of how this was built, including the prompts and steps that went wrong.
+- [REFLECTION.md](REFLECTION.md) - the five-question reflection, plus the further-action roadmap.
+
 ## The user journey
 
 1. **Meal Setup** - tick the ingredients in your kitchen, say how many people are eating,
