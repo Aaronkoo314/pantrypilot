@@ -98,7 +98,7 @@ There was no JavaScript toolchain on the laptop at all. Rather than stop, the to
 compiled the JSX in the browser through Babel, then served it over a local HTTP server. The
 whole app was built and exercised this way before Node existed on the machine.
 
-🔑 That script became a problem three days later — see 2.11 — but it is the reason there was
+🔑 That script became a problem the next morning — see 2.11 — but it is the reason there was
 anything to look at on day one.
 
 ### 2.2 Writing the data file failed on shell quoting
@@ -141,7 +141,8 @@ rather than images when the pane is not visible.
 
 ### 2.5 Two real defects found by looking
 
-✅ Both of these were caught visually, and neither would have been caught by reading code:
+⚠️ Two product defects, both shipped into the build, both caught visually, and neither of which
+would have been caught by reading code:
 
 - The four statistics on a meal card wrapped **3 + 1** at 375 px instead of sitting in a row.
   Fixed by switching from a wrapping flex row to a two-column grid.
@@ -192,11 +193,13 @@ the second one as the same problem as the first.
 >
 > **Me:** 我关掉了，但是这个网页现在有什么问题吗
 
-🔑 A background process was running that I had not asked about. I killed it first and asked what
-it was second. For a process on my own machine that is the right order, and it is one of the few
-points in the log where I exercised control rather than accepting an explanation.
+🔑 A background process was running that I had not asked about. I killed it first and asked
+what it was second.
 
-It was the Python preview server. Killing it broke nothing.
+It was the Python preview server, and killing it broke nothing — but I did not know that when I
+killed it. The honest reading is that I took a small risk and it happened not to cost anything. On
+my own machine, with a process I had not authorised, acting first is defensible; it is not the same
+thing as having judged it safe.
 
 ### 2.9 Approving the commit
 
@@ -273,8 +276,70 @@ strings that are neither absolute nor relative paths, received "D:/GitHub/pantry
 
 Fix: run both from the same path. Cost: a blank page that looked like a code error and was not.
 
+### 2.13 A stopped process that did not stop
 
+⚠️ Stopping the dev server killed the `npm` wrapper but left the `vite` child running and holding
+port 5173, so the next server silently started on 5174 while I was still testing against 5173 —
+and 5173 was the *broken* one from 2.12. Two minutes of testing a server I thought I had replaced.
 
+### 2.14 The counter that never counted
+
+⚠️ 🔑 The single worst defect in the build, and the one that says the most.
+
+The Meal Setup screen ends in a button reading **"Find Meals · 8 meals fit right now"**. The
+count filtered on the time budget alone:
+
+```js
+const setupResultCount = useMemo(() => {
+  const limit = timeLimitMinutes(setup.timeId);
+  return MEALS.filter((meal) => meal.totalMinutes <= limit).length;
+}, [setup.timeId]);              // setup.ingredientIds never referenced
+```
+
+Tick nothing: 8. Tick fourteen ingredients: 8. The one input the entire product exists to consume
+had no effect on the only feedback shown before committing.
+
+It survived being written, being browser-tested, **three screenshots taken at ingredient counts of
+0, 10 and 14 — all of which show the button reading "8"** — my review, the commit, and the push.
+It was found only when eight adversarial review agents were pointed at the code *after* the
+reflection had been written.
+
+> **Me:** 改了
+
+Fixed on 7 September. The button now reports two figures that move, and the fix was verified by
+the check that should have been run on day one:
+
+```
+chips = 0    →  "8 meals fit your time"
+chips = 6    →  "8 meals · 0 need no shopping"
+chips = 7    →  "8 meals · 1 needs no shopping"    ← the 7th completes a recipe
+chips = 14   →  "8 meals · 3 need no shopping"
+```
+
+**The test is four seconds long: tick an ingredient, watch whether the number moves.** It was never
+run, because the screen looked finished and the number looked like a number.
+
+### 2.15 Ambiguous instructions of my own
+
+⚠️ Two of my prompts were ambiguous enough to need checking rather than guessing:
+
+- **"然后可以删掉提交部分的内容"** — "delete the submission part" or "delete the commit content"?
+  The second reading would have gutted the reflection, since the commit is its central evidence.
+  The interpretation was stated back to me before acting.
+- **"改了"** — "I changed it" or "go change it"? Resolved by checking the file: it was unmodified,
+  so it meant the latter.
+
+Worth logging because short prompts in a second language carry ambiguity that long ones do not,
+and the cost of a wrong reading rises with how destructive the action is.
+
+### 2.16 An edit that silently did not apply
+
+⚠️ While removing the deleted script from the README, one of two edits failed: the first edit
+deleted the line containing `build_preview.py`, which broke the multi-line string the second edit
+was matching against. No error was raised. The README was left with a section heading followed by
+a sentence fragment pointing at a file that no longer existed.
+
+Caught by grepping the README afterwards rather than by trusting the edit reported success.
 
 ---
 
@@ -286,12 +351,34 @@ Fix: run both from the same path. Cost: a blank page that looked like a code err
 | 2.2 | Shell heredoc quoting | One wasted attempt on a 500-line file |
 | 2.3 | Stale closure dropped 13 of 14 selections | Real bug; found by automated testing |
 | 2.4 | Blank screenshots from a hidden pane | 5–6 wasted cycles |
+| 2.5 | Stats wrapped 3+1 at 375 px; brand emoji read as a magnifying glass | Two UI defects, both caught by looking |
 | 2.6 | `&&` unsupported in PowerShell 5.1 | Blocked the documented run command |
 | 2.7 | PATH stale after install, twice | Two rounds of the same confusion |
+| 2.9 | Approved 18 files and 4,360 lines on three words | Let 2.11 into a public repository |
 | 2.11 | Three CDN URLs in a repo whose brief forbade them | Went public; found at reflection time |
 | 2.12 | Vite served untransformed JSX (drive mapping) | Blank page that looked like a code error |
 | 2.13 | Orphaned server process held the port | Two minutes testing the wrong server |
+| **2.14** | **Setup counter ignored ingredients** | **Survived every check; found by adversarial review** |
+| 2.15 | My own prompts were ambiguous enough to need checking | Two near-misses, one of them destructive |
+| 2.16 | An edit reported success but did not apply | Left a broken README section |
 
+Fourteen failures across thirteen sections. The split matters more than the count:
+
+| Kind | Sections | Count |
+| --- | --- | --- |
+| Environment and tooling friction | 2.1, 2.2, 2.4, 2.6, 2.7, 2.12, 2.13 | 7 |
+| Defects in the product itself | 2.3, 2.5 (×2), 2.14 | 4 |
+| Failures of my own process | 2.9, 2.11, 2.15, 2.16 | 4 |
+
+The tooling friction cost time and nothing else. The four in the last row are the ones worth
+reading: none of them were caused by the tool, and all four would have been caught by a person
+reading something before agreeing to it.
+
+The two rows in the middle failed in opposite directions, which is the single most useful thing in
+this log. **2.3 was caught by testing and would never have been caught by reading** — a stale
+closure is invisible in a diff. **2.14 was caught by reading and had already survived testing** —
+three screenshots show the bug and nobody looked at the number. Neither method is the safety net;
+each one is blind exactly where the other sees.
 
 ---
 
