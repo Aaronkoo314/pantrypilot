@@ -12,6 +12,12 @@ Built for MGMT 6110 Human-AI Collaboration, Singapore Management University.
 - [PROMPTS.md](PROMPTS.md) - the working log of how this was built, including the prompts and steps that went wrong.
 - [REFLECTION.md](REFLECTION.md) - the five-question reflection, plus the further-action roadmap.
 - [RANKING-RULES.md](RANKING-RULES.md) - what every rule that ranks, scores or filters the meal list does, with its weights and a named owner.
+- [CHANGELOG.md](CHANGELOG.md) - every version, newest first.
+
+> **Which version the documents describe.** The three documents above describe the state tagged
+> `v1-submitted`, which is what was handed in for Problem Set 1. `main` has moved on since.
+> `git checkout v1-submitted` gives you exactly the graded version; [CHANGELOG.md](CHANGELOG.md)
+> lists what changed after it.
 
 ## The user journey
 
