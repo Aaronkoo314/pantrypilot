@@ -73,13 +73,14 @@ output directory `dist`).
 | `package.json` | React 18 + Vite dependencies and the `dev` / `build` / `preview` scripts. |
 | `vite.config.js` | Standard Vite + React plugin config. |
 | `src/main.jsx` | Mounts `<App />` into `#root` and loads the stylesheet. |
+| `src/components/SplashScreen.jsx` | The cover screen. Three-second hold with a state-driven progress bar, skippable, skipped under reduced-motion. |
 | `src/App.jsx` | Root component. Holds setup, filter and screen state, computes the recommendation list, and switches between the three screens without reloading. |
 | `src/data/pantryData.js` | **All invented data:** 30 ingredients, 11 meals with quantities, servings, times, macros, difficulty, category and derived fitness suitability, plus the time and preference option lists. |
 | `src/utils/mealMatching.js` | Pure logic: ingredient matching, preference scoring, filtering, sorting, serving scaling and formatting. |
 | `src/components/MealSetup.jsx` | Screen 1. People, time and preference controls plus the Find Meals button. |
-| `src/components/IngredientPicker.jsx` | The searchable, category-grouped ingredient chips used by Screen 1. |
+| `src/components/IngredientPicker.jsx` | Screen 1's ingredient index: search, an echo of your picks, and collapsible category groups carrying item and selected counts. |
 | `src/components/MealRecommendations.jsx` | Screen 2. Setup summary, filter bar, result count, meal list and empty state. |
-| `src/components/FilterBar.jsx` | Time / preference filters, sort dropdown and the "only meals I can cook now" toggle. |
+| `src/components/FilterBar.jsx` | Time / preference filters, sort dropdown with an ascending/descending control, and the "only meals I can cook now" toggle. |
 | `src/components/MealCard.jsx` | One meal summary card: name, match line and meter, time, servings, calories, difficulty, tags and missing ingredients. |
 | `src/components/MealDetail.jsx` | Screen 3. Serving control, have / need ingredient lists, times, nutrition, steps and the back button. |
 | `src/styles.css` | All styling. Mobile-first, warm palette, 48px minimum touch targets. |
