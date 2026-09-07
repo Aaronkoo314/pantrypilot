@@ -217,7 +217,7 @@ const RAW_MEALS = [
       'Heat the oven to a high roasting temperature and line a tray.',
       'Toss the broccoli florets with the oil, crushed garlic and herbs, then spread them out.',
       'Roast the vegetables on their own for 8 minutes so they get a head start.',
-      'Nestle in the salmon, top each fillet with lemon slices, and roast for 10 minutes more.',
+      'Tuck the salmon in among the vegetables, top each fillet with lemon slices, and roast for 10 minutes more.',
       'Squeeze over the rest of the lemon and serve straight from the tray.',
     ],
   },

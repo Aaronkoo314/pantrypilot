@@ -3,6 +3,8 @@
 A front-end prototype that helps non-professional home cooks answer one question:
 **what should I cook with what I already have?**
 
+**Author: Aaron Koo**  
+
 Built for MGMT 6110 Human-AI Collaboration, Singapore Management University.
 
 ## The user journey
@@ -38,19 +40,6 @@ npm run build
 Vercel picks this up automatically as a Vite project (build command `npm run build`,
 output directory `dist`).
 
-### No-build preview (optional, dev only)
-
-If Node.js is not available on a machine, `tools/build_preview.py` concatenates the same
-source files into a single page that compiles JSX in the browser:
-
-```bash
-python tools/build_preview.py
-python -m http.server 8000
-```
-
-Then open `http://localhost:8000/preview/index.html`. This is a convenience for
-demoing only - the real build is Vite. The generated `preview/` folder is gitignored.
-
 ## Scope and guardrails
 
 - Front end only. No backend, no database, no accounts, no analytics.
@@ -80,4 +69,3 @@ demoing only - the real build is Vite. The generated `preview/` folder is gitign
 | `src/components/MealCard.jsx` | One meal summary card: name, match bar, time, servings, calories, difficulty, tags and missing ingredients. |
 | `src/components/MealDetail.jsx` | Screen 3. Serving control, have / need ingredient lists, times, nutrition, steps and the back button. |
 | `src/styles.css` | All styling. Mobile-first, warm palette, 48px minimum touch targets. |
-| `tools/build_preview.py` | Dev-only helper that bundles `src/` into a no-build HTML preview. Not part of the app. |
