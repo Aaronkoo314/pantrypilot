@@ -2,6 +2,14 @@
 
 **Owner: Aaron Koo** · Last reviewed 7 September 2026
 
+> ⚠️ **This file describes v1 and is out of date as of the v2 data release.**
+> Rules 3 to 6 — Fitness suitability, Quick & Easy fit, Family Meal fit and Regular fit —
+> describe the four meal preferences, which v2 deleted. Rule 2's Recommended sort is also gone.
+> What v2 actually does: cuisine, weight band, vegetarian and time all EXCLUDE rather than score,
+> and the four sorts are plain orderings over ingredient match, time, calories and price with no
+> weights anywhere. Nothing in the app is scored any more. This file is rewritten next; until
+> then, read it as the record of what v1 did. See [CHANGELOG.md](CHANGELOG.md).
+
 Six rules in this app decide what a user sees and in what order. They were generated during
 the build and shipped without anyone stating what they do. This file states each one in a
 plain sentence, names its weights, and records what it actually produces on the real eleven

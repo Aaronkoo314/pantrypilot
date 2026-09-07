@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
-import { formatMinutes, scaleMeal } from '../utils/mealMatching.js';
+import { CUISINE_BY_ID, WEIGHT_BAND_BY_ID } from '../data/pantryData.js';
+import { formatMinutes, formatPrice, scaleMeal } from '../utils/mealMatching.js';
 
 const MIN_SERVINGS = 1;
 const MAX_SERVINGS = 12;
 
 /**
  * Screen 3: everything the user needs to actually cook the meal,
- * including a serving-size control that rescales quantities and totals.
+ * including a serving-size control that rescales quantities, price and totals.
  */
 export default function MealDetail({ meal, ownedIds, initialServings, onBack }) {
   const [servings, setServings] = useState(
@@ -18,10 +19,28 @@ export default function MealDetail({ meal, ownedIds, initialServings, onBack }) 
 
   const haveLines = scaled.ingredients.filter((line) => owned.has(line.id));
   const needLines = scaled.ingredients.filter((line) => !owned.has(line.id));
+  const shoppingCost = needLines.reduce((total, line) => total + line.linePrice, 0);
+
+  const cuisine = CUISINE_BY_ID[meal.cuisine];
+  const band = WEIGHT_BAND_BY_ID[meal.weightBand];
 
   function stepServings(delta) {
-    setServings((current) =>
-      Math.min(MAX_SERVINGS, Math.max(MIN_SERVINGS, current + delta))
+    setServings((current) => Math.min(MAX_SERVINGS, Math.max(MIN_SERVINGS, current + delta)));
+  }
+
+  function ingredientRow(line, kind) {
+    return (
+      <li className={`ingredient-row row-${kind}`} key={line.id}>
+        <span className="row-mark" aria-hidden="true">
+          {kind === 'have' ? '✓' : '+'}
+        </span>
+        <span className="row-emoji" aria-hidden="true">
+          {line.ingredient.emoji}
+        </span>
+        <span className="row-name">{line.ingredient.name}</span>
+        <span className="row-qty">{line.display}</span>
+        <span className="row-price">{formatPrice(line.linePrice)}</span>
+      </li>
     );
   }
 
@@ -41,9 +60,16 @@ export default function MealDetail({ meal, ownedIds, initialServings, onBack }) 
           </div>
         </div>
         <div className="tag-row">
+          {cuisine && (
+            <span className="tag tag-cuisine">
+              <span aria-hidden="true">{cuisine.emoji}</span> {cuisine.label}
+            </span>
+          )}
           <span className="tag tag-category">{meal.category}</span>
+          {band && <span className={`tag tag-band tag-band-${meal.weightBand}`}>{band.label}</span>}
           <span className="tag">{meal.difficulty}</span>
           <span className="tag">{meal.matchPercent}% match</span>
+          {meal.vegetarian && <span className="tag tag-veg">Vegetarian</span>}
           {meal.isReadyToCook && <span className="tag tag-ready">Nothing missing</span>}
         </div>
       </header>
@@ -53,7 +79,7 @@ export default function MealDetail({ meal, ownedIds, initialServings, onBack }) 
           Serving size
         </h2>
         <p className="section-hint">
-          Quantities and totals rescale. Calories per person stay the same.
+          Quantities, price and totals rescale. Calories per person stay the same.
         </p>
         <div className="stepper">
           <button
@@ -107,51 +133,46 @@ export default function MealDetail({ meal, ownedIds, initialServings, onBack }) 
           Ingredients for {servings} {servings === 1 ? 'serving' : 'servings'}
         </h2>
 
-        <h3 className="group-title group-have">
-          You have ({haveLines.length})
-        </h3>
+        <h3 className="group-title group-have">You have ({haveLines.length})</h3>
         {haveLines.length === 0 ? (
           <p className="empty-note">Nothing from this recipe is in your kitchen yet.</p>
         ) : (
-          <ul className="ingredient-list">
-            {haveLines.map((line) => (
-              <li className="ingredient-row row-have" key={line.id}>
-                <span className="row-mark" aria-hidden="true">
-                  &#10003;
-                </span>
-                <span className="row-emoji" aria-hidden="true">
-                  {line.ingredient.emoji}
-                </span>
-                <span className="row-name">{line.ingredient.name}</span>
-                <span className="row-qty">{line.display}</span>
-              </li>
-            ))}
-          </ul>
+          <ul className="ingredient-list">{haveLines.map((l) => ingredientRow(l, 'have'))}</ul>
         )}
 
-        <h3 className="group-title group-need">
-          You still need ({needLines.length})
-        </h3>
+        <h3 className="group-title group-need">You still need ({needLines.length})</h3>
         {needLines.length === 0 ? (
-          <p className="ready-note">
-            You have everything. Start cooking whenever you are ready.
-          </p>
+          <p className="ready-note">You have everything. Start cooking whenever you are ready.</p>
         ) : (
-          <ul className="ingredient-list">
-            {needLines.map((line) => (
-              <li className="ingredient-row row-need" key={line.id}>
-                <span className="row-mark" aria-hidden="true">
-                  +
-                </span>
-                <span className="row-emoji" aria-hidden="true">
-                  {line.ingredient.emoji}
-                </span>
-                <span className="row-name">{line.ingredient.name}</span>
-                <span className="row-qty">{line.display}</span>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="ingredient-list">{needLines.map((l) => ingredientRow(l, 'need'))}</ul>
+            <p className="base-note">
+              The {needLines.length} {needLines.length === 1 ? 'item' : 'items'} you are missing
+              come to <strong>{formatPrice(shoppingCost)}</strong> at this serving size.
+            </p>
+          </>
         )}
+      </section>
+
+      <section className="card" aria-labelledby="cost-heading">
+        <h2 id="cost-heading" className="section-title">
+          Cost
+        </h2>
+        <div className="calorie-split">
+          <div className="calorie-box">
+            <span className="calorie-value">{formatPrice(scaled.pricePerServing)}</span>
+            <span className="calorie-label">per person</span>
+          </div>
+          <div className="calorie-box calorie-box-muted">
+            <span className="calorie-value">{formatPrice(scaled.totalPrice)}</span>
+            <span className="calorie-label">
+              whole dish ({servings} {servings === 1 ? 'serving' : 'servings'})
+            </span>
+          </div>
+        </div>
+        <p className="disclaimer">
+          Invented prices for this prototype. Not real shop prices, and no shop is implied.
+        </p>
       </section>
 
       <section className="card" aria-labelledby="nutrition-heading">
@@ -166,7 +187,9 @@ export default function MealDetail({ meal, ownedIds, initialServings, onBack }) 
           </div>
           <div className="calorie-box calorie-box-muted">
             <span className="calorie-value">{scaled.totalCalories}</span>
-            <span className="calorie-label">kcal total ({servings} servings)</span>
+            <span className="calorie-label">
+              kcal total ({servings} {servings === 1 ? 'serving' : 'servings'})
+            </span>
           </div>
         </div>
 

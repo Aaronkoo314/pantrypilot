@@ -4,53 +4,65 @@ import { INGREDIENTS, INGREDIENT_BY_ID, INGREDIENT_CATEGORIES } from '../data/pa
 /**
  * Section component: the ingredient list for "what do you have?".
  *
- * Rewritten for a dataset several times the size of the original thirty. Laying
- * every chip out at once worked at 30 and does not at 60: the card was already
- * 1,386px tall and 55% of the setup screen, which pushed the other three
- * questions below two viewport heights.
+ * 93 ingredients, so the card is an index rather than a wall. Three things
+ * carry it:
  *
- * So the card is an index rather than a wall. Three things carry it:
- *
- *   1. Search first. Someone standing at an open fridge knows what they are
- *      looking for; typing three letters beats scrolling five categories.
- *   2. What you have stays visible. Picks are echoed at the top, so you can
- *      see and undo them without scrolling back through the groups.
- *   3. Groups collapse, and their headers carry counts. Five labelled rows
- *      reading "Proteins · 18 items · 3 selected" are scannable at a glance in
- *      a way that sixty chips are not, and the counts stop a collapsed card
- *      from reading as an empty one.
+ *   1. Search first. Someone at an open fridge knows what they are looking
+ *      for; three letters beats opening five categories.
+ *   2. What you have stays visible, at the top, where you can undo it.
+ *   3. Categories collapse, and the two that need it have a second level -
+ *      Meat & Seafood opens into Pork, Chicken, Beef, Lamb, Fish & Seafood and
+ *      Plant Protein; Pantry & Flavour opens into Western, Chinese and Thai.
+ *      Every header carries item and selected counts, so a closed card reads
+ *      as an index rather than an empty one, and nobody has to scroll past
+ *      twenty-six pantry items to reach the beef.
  */
 export default function IngredientPicker({ selectedIds, onToggle, onClear }) {
   const [query, setQuery] = useState('');
+  const [openCategories, setOpenCategories] = useState([]);
   const [openGroups, setOpenGroups] = useState([]);
 
   const searching = query.trim().length > 0;
 
-  const groups = useMemo(() => {
+  const tree = useMemo(() => {
     const needle = query.trim().toLowerCase();
+    const matches = (item) => !needle || item.name.toLowerCase().includes(needle);
+
     return INGREDIENT_CATEGORIES.map((category) => {
       const all = INGREDIENTS.filter((item) => item.category === category);
-      const matches = needle
-        ? all.filter((item) => item.name.toLowerCase().includes(needle))
-        : all;
+      const hits = all.filter(matches);
+
+      // A category is grouped when its items declare a group.
+      const groupNames = [...new Set(all.map((item) => item.group).filter(Boolean))];
+      const groups = groupNames
+        .map((name) => {
+          const groupAll = all.filter((item) => item.group === name);
+          return {
+            name,
+            items: groupAll.filter(matches),
+            total: groupAll.length,
+            selected: groupAll.filter((item) => selectedIds.includes(item.id)).length,
+          };
+        })
+        .filter((group) => group.items.length > 0);
+
       return {
         category,
-        items: matches,
+        grouped: groupNames.length > 0,
+        groups,
+        items: groupNames.length > 0 ? [] : hits,
         total: all.length,
+        hitCount: hits.length,
         selected: all.filter((item) => selectedIds.includes(item.id)).length,
       };
-    }).filter((group) => group.items.length > 0);
+    }).filter((entry) => entry.hitCount > 0);
   }, [query, selectedIds]);
 
-  const selectedItems = selectedIds
-    .map((id) => INGREDIENT_BY_ID[id])
-    .filter(Boolean);
+  const selectedItems = selectedIds.map((id) => INGREDIENT_BY_ID[id]).filter(Boolean);
 
-  function toggleGroup(category) {
-    setOpenGroups((current) =>
-      current.includes(category)
-        ? current.filter((name) => name !== category)
-        : [...current, category]
+  function toggleIn(setter, value) {
+    setter((current) =>
+      current.includes(value) ? current.filter((item) => item !== value) : [...current, value]
     );
   }
 
@@ -69,6 +81,27 @@ export default function IngredientPicker({ selectedIds, onToggle, onClear }) {
           {item.emoji}
         </span>
         <span className="chip-label">{item.name}</span>
+      </button>
+    );
+  }
+
+  function renderHeader({ label, open, count, selected, onClick, sub }) {
+    return (
+      <button
+        type="button"
+        className={`group-header ${open ? 'group-open' : ''} ${sub ? 'group-header-sub' : ''}`}
+        aria-expanded={open}
+        onClick={onClick}
+        disabled={searching}
+      >
+        <span className="group-caret" aria-hidden="true">
+          {open ? '−' : '+'}
+        </span>
+        <span className="group-name">{label}</span>
+        <span className="group-count">
+          {count}
+          {selected > 0 && <span className="group-selected"> &middot; {selected} selected</span>}
+        </span>
       </button>
     );
   }
@@ -111,41 +144,47 @@ export default function IngredientPicker({ selectedIds, onToggle, onClear }) {
         </div>
       )}
 
-      {groups.length === 0 && (
-        <p className="empty-note">Nothing matches &ldquo;{query}&rdquo;.</p>
-      )}
+      {tree.length === 0 && <p className="empty-note">Nothing matches &ldquo;{query}&rdquo;.</p>}
 
-      {groups.map((group) => {
+      {tree.map((entry) => {
         // A search opens whatever it found; browsing remembers what you opened.
-        const isOpen = searching || openGroups.includes(group.category);
-        const panelId = `group-${group.category.replace(/\W+/g, '-').toLowerCase()}`;
+        const catOpen = searching || openCategories.includes(entry.category);
         return (
-          <div className="ingredient-group" key={group.category}>
-            <button
-              type="button"
-              className={`group-header ${isOpen ? 'group-open' : ''}`}
-              aria-expanded={isOpen}
-              aria-controls={panelId}
-              onClick={() => toggleGroup(group.category)}
-              disabled={searching}
-            >
-              <span className="group-caret" aria-hidden="true">
-                {isOpen ? '−' : '+'}
-              </span>
-              <span className="group-name">{group.category}</span>
-              <span className="group-count">
-                {searching
-                  ? `${group.items.length} of ${group.total}`
-                  : `${group.total} items`}
-                {group.selected > 0 && (
-                  <span className="group-selected"> &middot; {group.selected} selected</span>
-                )}
-              </span>
-            </button>
+          <div className="ingredient-group" key={entry.category}>
+            {renderHeader({
+              label: entry.category,
+              open: catOpen,
+              count: searching ? `${entry.hitCount} of ${entry.total}` : `${entry.total} items`,
+              selected: entry.selected,
+              onClick: () => toggleIn(setOpenCategories, entry.category),
+              sub: false,
+            })}
 
-            <div id={panelId} className="chip-grid" hidden={!isOpen}>
-              {group.items.map(renderChip)}
-            </div>
+            {catOpen && !entry.grouped && (
+              <div className="chip-grid">{entry.items.map(renderChip)}</div>
+            )}
+
+            {catOpen &&
+              entry.grouped &&
+              entry.groups.map((group) => {
+                const key = `${entry.category}::${group.name}`;
+                const groupOpen = searching || openGroups.includes(key);
+                return (
+                  <div className="ingredient-subgroup" key={key}>
+                    {renderHeader({
+                      label: group.name,
+                      open: groupOpen,
+                      count: searching
+                        ? `${group.items.length} of ${group.total}`
+                        : `${group.total} items`,
+                      selected: group.selected,
+                      onClick: () => toggleIn(setOpenGroups, key),
+                      sub: true,
+                    })}
+                    {groupOpen && <div className="chip-grid">{group.items.map(renderChip)}</div>}
+                  </div>
+                );
+              })}
           </div>
         );
       })}

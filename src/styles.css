@@ -1095,6 +1095,113 @@ button {
   .splash { display: none; }
 }
 
+/* ---------------- v2 additions ---------------- */
+
+/* Second level of the ingredient index. Indented and lighter than a category
+   header so the hierarchy reads without a line connecting them. */
+.ingredient-subgroup {
+  padding-left: 12px;
+}
+
+.group-header-sub {
+  border-top: 1px dashed var(--rule-soft);
+  min-height: 44px;
+}
+
+.group-header-sub .group-name {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.group-header-sub .group-caret {
+  width: 22px;
+  height: 22px;
+  font-size: 15px;
+  background: var(--cream);
+}
+
+/* The results-screen disclosure holding time, cuisine and weight. */
+.disclosure {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0;
+  margin-top: 4px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  text-align: left;
+}
+
+.filter-any {
+  margin-left: 6px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-faint);
+}
+
+/* Price sits with the quantity on a detail row, right-aligned so the column
+   of figures lines up down the list. */
+.row-price {
+  flex: none;
+  min-width: 3.6rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.row-qty {
+  min-width: 4.2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat dd {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cuisine, weight band and vegetarian tags. The band colours run cool to warm
+   with weight so the three read as a scale rather than three unrelated labels,
+   and each is legible on the card ground rather than relying on hue alone. */
+.tag-cuisine {
+  background: #eef1f6;
+  border-color: #d7deea;
+  color: #3c4a63;
+}
+
+.tag-band-light {
+  background: #eaf4ee;
+  border-color: #c3ddcb;
+  color: var(--herb);
+}
+
+.tag-band-medium {
+  background: #fbf1de;
+  border-color: #e8d4ae;
+  color: var(--amber);
+}
+
+.tag-band-heavy {
+  background: var(--paprika-soft);
+  border-color: #edc4b3;
+  color: var(--paprika-dark);
+}
+
+.tag-veg {
+  background: #eaf4ee;
+  border-color: #c3ddcb;
+  color: var(--herb);
+}
+
+/* Several relaxation buttons can stack in the empty state. */
+.empty-card .secondary-button + .secondary-button {
+  margin-top: 8px;
+}
+
 /* ---------------- wider screens ---------------- */
 
 @media (min-width: 620px) {

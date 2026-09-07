@@ -1,25 +1,53 @@
 /*
- * Pure helper functions for matching, scoring, filtering and scaling meals.
+ * Pure helper functions for matching, filtering, sorting, scaling and pricing.
  * No data lives here - everything comes from src/data/pantryData.js.
  */
 
 import { INGREDIENT_BY_ID, TIME_OPTIONS } from '../data/pantryData.js';
 
 /*
- * `directional` marks the sorts where reversing the order is a question a user
- * actually asks - shortest or longest, lightest or heaviest. Recommended and
- * Preference fit are scores, and "least recommended first" is not a request
- * anyone makes, so those two stay fixed and the direction control hides.
+ * The sorts.
  *
- * `ascLabel` / `descLabel` name the direction in the user's terms rather than
- * as an arrow, because "Shortest first" is unambiguous and an up arrow is not.
+ * v1 had five, and two of them - "Recommended" and "Preference fit" - were
+ * scores over the four meal preferences. Those preferences are gone, which
+ * left "Recommended" as ingredient match under a different name. Shipping both
+ * would have repeated the exact defect RANKING-RULES.md recorded against v1's
+ * Regular preference: two controls that produce the same list. So there are
+ * four sorts, ingredient match is the default, and nothing is scored.
+ *
+ * `directional` marks the sorts where reversing is a question a user actually
+ * asks. `ascLabel` / `descLabel` name the direction in the user's terms,
+ * because "Cheapest first" is unambiguous and an up arrow is not.
  */
 export const SORT_OPTIONS = [
-  { id: 'recommended', label: 'Recommended', directional: false },
-  { id: 'match', label: 'Ingredient match', directional: true, ascLabel: 'Fewest first', descLabel: 'Best first' },
-  { id: 'time', label: 'Cooking time', directional: true, ascLabel: 'Shortest first', descLabel: 'Longest first' },
-  { id: 'calories', label: 'Calories', directional: true, ascLabel: 'Lightest first', descLabel: 'Heaviest first' },
-  { id: 'preference', label: 'Preference fit', directional: false },
+  {
+    id: 'match',
+    label: 'Ingredient match',
+    directional: true,
+    ascLabel: 'Fewest first',
+    descLabel: 'Best first',
+  },
+  {
+    id: 'time',
+    label: 'Cooking time',
+    directional: true,
+    ascLabel: 'Shortest first',
+    descLabel: 'Longest first',
+  },
+  {
+    id: 'calories',
+    label: 'Calories',
+    directional: true,
+    ascLabel: 'Lightest first',
+    descLabel: 'Heaviest first',
+  },
+  {
+    id: 'price',
+    label: 'Price per person',
+    directional: true,
+    ascLabel: 'Cheapest first',
+    descLabel: 'Priciest first',
+  },
 ];
 
 export const SORT_BY_ID = SORT_OPTIONS.reduce((map, option) => {
@@ -29,7 +57,7 @@ export const SORT_BY_ID = SORT_OPTIONS.reduce((map, option) => {
 
 /** The direction a sort starts in the first time it is chosen. */
 export function defaultSortDir(sortId) {
-  return sortId === 'time' || sortId === 'calories' ? 'asc' : 'desc';
+  return sortId === 'match' ? 'desc' : 'asc';
 }
 
 /* ---------------------------------------------------------------- *
@@ -74,54 +102,6 @@ export function ingredientNames(lines) {
 }
 
 /* ---------------------------------------------------------------- *
- * Preference scoring
- * ---------------------------------------------------------------- */
-
-/**
- * How well a meal fits the chosen meal preference, 0-100.
- *
- * Fitness deliberately uses only the dataset's own nutrition signal
- * (fitnessSuitability = higher protein, lower calories, balanced macros).
- *
- * These weights are stated in plain English, with the order they actually
- * produce on the eleven meals, in RANKING-RULES.md (rules 4, 5 and 6).
- * Change a number here and change it there.
- */
-export function preferenceScore(meal, preferenceId) {
-  switch (preferenceId) {
-    case 'quick': {
-      // Shorter total time is better; being labelled Easy helps a little.
-      const timeScore = Math.min(Math.max((75 - meal.totalMinutes) / 70, 0), 1) * 80;
-      const easeScore = meal.difficulty === 'Easy' ? 20 : meal.difficulty === 'Medium' ? 10 : 0;
-      return Math.round(timeScore + easeScore);
-    }
-    case 'fitness':
-      return meal.fitnessSuitability;
-    case 'family': {
-      // Bigger batches and crowd-pleasing meals score higher.
-      const batchScore = Math.min(meal.baseServings / 4, 1) * 55;
-      const crowdScore = meal.familyFriendly ? 35 : 5;
-      const easeScore = meal.difficulty === 'Easy' ? 10 : 5;
-      return Math.round(batchScore + crowdScore + easeScore);
-    }
-    case 'regular':
-    default:
-      // Neutral: a gentle nudge toward easier, faster, everyday meals.
-      return Math.round(
-        Math.min(Math.max((90 - meal.totalMinutes) / 85, 0), 1) * 40 +
-          (meal.difficulty === 'Easy' ? 20 : 10) +
-          40
-      );
-  }
-}
-
-/** A meal is called a "strong fit" when it clearly suits the chosen preference. */
-export function isStrongPreferenceFit(meal, preferenceId) {
-  if (preferenceId === 'regular') return false;
-  return preferenceScore(meal, preferenceId) >= 70;
-}
-
-/* ---------------------------------------------------------------- *
  * Filtering and sorting
  * ---------------------------------------------------------------- */
 
@@ -131,44 +111,49 @@ export function timeLimitMinutes(timeId) {
 }
 
 /**
- * Turn the raw meal list into the ranked list shown on the recommendations screen.
+ * Turn the raw meal list into the list shown on the recommendations screen.
  *
- * settings: { ownedIds, timeId, preferenceId, sortId, sortDir, readyOnly }
+ * Every filter here EXCLUDES. None of them scores, so none of them can quietly
+ * reorder the list behind the sort the user chose.
+ *
+ * settings: { ownedIds, timeId, cuisineIds, weightBands, vegetarianOnly,
+ *             readyOnly, sortId, sortDir }
+ * An empty cuisineIds or weightBands array means "no restriction".
  */
 export function buildRecommendations(meals, settings) {
-  const { ownedIds, timeId, preferenceId, sortId, sortDir, readyOnly } = settings;
+  const {
+    ownedIds,
+    timeId,
+    cuisineIds = [],
+    weightBands = [],
+    vegetarianOnly = false,
+    readyOnly = false,
+    sortId,
+    sortDir,
+  } = settings;
+
   const owned = new Set(ownedIds);
   const maxMinutes = timeLimitMinutes(timeId);
 
   const scored = meals
-    .map((meal) => {
-      const matched = matchMeal(meal, owned);
-      const prefScore = preferenceScore(meal, preferenceId);
-      return {
-        ...matched,
-        preferenceScore: prefScore,
-        // Default ranking: mostly "can I actually cook this", partly "does it suit me".
-        // See RANKING-RULES.md rule 2 for what the 60/40 blend does in practice -
-        // preference contributes less than 40% because its scores do not span 0-100.
-        recommendedScore: matched.matchPercent * 0.6 + prefScore * 0.4,
-      };
-    })
+    .map((meal) => matchMeal(meal, owned))
     .filter((meal) => meal.totalMinutes <= maxMinutes)
+    .filter((meal) => cuisineIds.length === 0 || cuisineIds.includes(meal.cuisine))
+    .filter((meal) => weightBands.length === 0 || weightBands.includes(meal.weightBand))
+    .filter((meal) => (vegetarianOnly ? meal.vegetarian : true))
     .filter((meal) => (readyOnly ? meal.isReadyToCook : true));
 
-  // Each sort names the value it orders by. Direction is applied once, below,
-  // so there is one rule for it instead of five.
+  // One key function per sort, then a single direction rule, so there is one
+  // place to change how direction works rather than four.
   const keys = {
-    recommended: (meal) => meal.recommendedScore,
     match: (meal) => meal.matchPercent,
     time: (meal) => meal.totalMinutes,
     calories: (meal) => meal.caloriesPerServing,
-    preference: (meal) => meal.preferenceScore,
+    price: (meal) => meal.pricePerServing,
   };
 
-  const keyOf = keys[sortId] || keys.recommended;
-  const option = SORT_BY_ID[sortId] || SORT_BY_ID.recommended;
-  // A non-directional sort ignores whatever direction is being carried.
+  const keyOf = keys[sortId] || keys.match;
+  const option = SORT_BY_ID[sortId] || SORT_BY_ID.match;
   const dir = option.directional && sortDir === 'asc' ? 1 : -1;
 
   return scored.sort((a, b) => {
@@ -194,14 +179,25 @@ function roundQuantity(value, unit) {
   return Math.round(value * 2) / 2;
 }
 
-export function formatQuantity(quantity, unit) {
+/**
+ * Format a quantity for display. The unit is looked up on the ingredient
+ * rather than passed in, because the ingredient is the only place a unit is
+ * declared - a recipe line carries a bare number.
+ */
+export function formatQuantity(quantity, ingredientId) {
+  const unit = (INGREDIENT_BY_ID[ingredientId] || {}).unit || '';
   const rounded = roundQuantity(quantity, unit);
   const shown = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
   return unit ? `${shown} ${unit}` : shown;
 }
 
+/** Singapore dollars, to the cent. */
+export function formatPrice(amount) {
+  return `S$${amount.toFixed(2)}`;
+}
+
 /**
- * Scale a meal's ingredient quantities from its base servings to the chosen servings.
+ * Scale a meal from its base servings to the chosen servings.
  * Calories and macros PER SERVING never change here - only the totals do.
  */
 export function scaleMeal(meal, servings) {
@@ -210,8 +206,9 @@ export function scaleMeal(meal, servings) {
   const ingredients = meal.ingredients.map((line) => ({
     ...line,
     scaledQuantity: line.quantity * factor,
-    display: formatQuantity(line.quantity * factor, line.unit),
+    display: formatQuantity(line.quantity * factor, line.id),
     ingredient: INGREDIENT_BY_ID[line.id],
+    linePrice: line.quantity * factor * ((INGREDIENT_BY_ID[line.id] || {}).unitPrice || 0),
   }));
 
   return {
@@ -223,6 +220,8 @@ export function scaleMeal(meal, servings) {
     totalProtein: Math.round(meal.proteinGrams * servings),
     totalCarbs: Math.round(meal.carbGrams * servings),
     totalFat: Math.round(meal.fatGrams * servings),
+    pricePerServing: meal.pricePerServing,
+    totalPrice: meal.pricePerServing * servings,
   };
 }
 

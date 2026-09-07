@@ -1,17 +1,19 @@
-import { PREFERENCE_BY_ID } from '../data/pantryData.js';
-import {
-  formatMinutes,
-  ingredientNames,
-  isStrongPreferenceFit,
-} from '../utils/mealMatching.js';
+import { CUISINE_BY_ID, WEIGHT_BAND_BY_ID } from '../data/pantryData.js';
+import { formatMinutes, formatPrice, ingredientNames } from '../utils/mealMatching.js';
 
 /**
  * Section component: one meal summary card on the recommendations screen.
+ *
+ * Four figures, and they are the four the sorts offer: time, calories per
+ * person, price per person, and the ingredient match printed above them. v1
+ * showed "Serves" on every card, which was the same number on all of them,
+ * and difficulty, which was Easy on most - both have moved to the tag row
+ * where they cost no vertical space.
  */
-export default function MealCard({ meal, servings, preferenceId, onOpen }) {
+export default function MealCard({ meal, onOpen }) {
   const missing = ingredientNames(meal.missingIngredients);
-  const strongFit = isStrongPreferenceFit(meal, preferenceId);
-  const preference = PREFERENCE_BY_ID[preferenceId];
+  const cuisine = CUISINE_BY_ID[meal.cuisine];
+  const band = WEIGHT_BAND_BY_ID[meal.weightBand];
 
   return (
     <button type="button" className="meal-card" onClick={() => onOpen(meal.id)}>
@@ -46,26 +48,29 @@ export default function MealCard({ meal, servings, preferenceId, onOpen }) {
           <dd>{formatMinutes(meal.totalMinutes)}</dd>
         </div>
         <div className="stat">
-          <dt>Serves</dt>
-          <dd>{servings}</dd>
-        </div>
-        <div className="stat">
           <dt>Per person</dt>
           <dd>{meal.caloriesPerServing} kcal</dd>
         </div>
         <div className="stat">
-          <dt>Difficulty</dt>
-          <dd>{meal.difficulty}</dd>
+          <dt>Price each</dt>
+          <dd>{formatPrice(meal.pricePerServing)}</dd>
+        </div>
+        <div className="stat">
+          <dt>Serves</dt>
+          <dd>{meal.baseServings}</dd>
         </div>
       </dl>
 
       <div className="tag-row">
-        <span className="tag tag-category">{meal.category}</span>
-        {strongFit && preference && (
-          <span className="tag tag-fit">
-            <span aria-hidden="true">{preference.emoji}</span> Great for {preference.label}
+        {cuisine && (
+          <span className="tag tag-cuisine">
+            <span aria-hidden="true">{cuisine.emoji}</span> {cuisine.label}
           </span>
         )}
+        <span className="tag tag-category">{meal.category}</span>
+        {band && <span className={`tag tag-band tag-band-${meal.weightBand}`}>{band.label}</span>}
+        <span className="tag">{meal.difficulty}</span>
+        {meal.vegetarian && <span className="tag tag-veg">Vegetarian</span>}
         {meal.isReadyToCook && <span className="tag tag-ready">Nothing missing</span>}
       </div>
 

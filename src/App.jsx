@@ -4,12 +4,7 @@ import MealSetup from './components/MealSetup.jsx';
 import MealRecommendations from './components/MealRecommendations.jsx';
 import MealDetail from './components/MealDetail.jsx';
 import { MEALS, MEAL_BY_ID } from './data/pantryData.js';
-import {
-  buildRecommendations,
-  defaultSortDir,
-  matchMeal,
-  timeLimitMinutes,
-} from './utils/mealMatching.js';
+import { buildRecommendations, defaultSortDir, matchMeal } from './utils/mealMatching.js';
 
 /**
  * PantryPilot root.
@@ -22,17 +17,22 @@ export default function App() {
   const [screen, setScreen] = useState('setup');
   const [activeMealId, setActiveMealId] = useState(null);
 
+  // What the user tells us on screen 1. Cuisines and weight bands are
+  // multi-select: an empty array means no restriction rather than nothing.
   const [setup, setSetup] = useState({
     ingredientIds: [],
     people: 2,
     timeId: '30',
-    preferenceId: 'regular',
+    cuisineIds: [],
+    weightBands: [],
   });
 
+  // Controls that only exist on the results screen.
   const [listOptions, setListOptions] = useState({
-    sortId: 'recommended',
+    sortId: 'match',
     sortDir: 'desc',
     readyOnly: false,
+    vegetarianOnly: false,
   });
 
   // Every screen change starts at the top of the page, like a real app would.
@@ -42,39 +42,54 @@ export default function App() {
 
   const filters = {
     timeId: setup.timeId,
-    preferenceId: setup.preferenceId,
+    cuisineIds: setup.cuisineIds,
+    weightBands: setup.weightBands,
     sortId: listOptions.sortId,
     sortDir: listOptions.sortDir,
     readyOnly: listOptions.readyOnly,
+    vegetarianOnly: listOptions.vegetarianOnly,
   };
 
   const recommendations = useMemo(
-    () =>
-      buildRecommendations(MEALS, {
-        ownedIds: setup.ingredientIds,
-        timeId: setup.timeId,
-        preferenceId: setup.preferenceId,
-        sortId: listOptions.sortId,
-        sortDir: listOptions.sortDir,
-        readyOnly: listOptions.readyOnly,
-      }),
+    () => buildRecommendations(MEALS, { ownedIds: setup.ingredientIds, ...filters }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [setup, listOptions]
   );
 
-  // How many meals need no extra shopping, before the "ready only" toggle is applied.
-  const readyCount = useMemo(() => {
-    const limit = timeLimitMinutes(setup.timeId);
-    return MEALS.filter((meal) => meal.totalMinutes <= limit).filter(
-      (meal) => matchMeal(meal, setup.ingredientIds).isReadyToCook
-    ).length;
-  }, [setup.timeId, setup.ingredientIds]);
-
-  // How many cards the results screen will actually show, before the
-  // results-screen toggles are applied. Moves with the time budget.
-  const setupResultCount = useMemo(() => {
-    const limit = timeLimitMinutes(setup.timeId);
-    return MEALS.filter((meal) => meal.totalMinutes <= limit).length;
-  }, [setup.timeId]);
+  /**
+   * Counts for the labels that promise something.
+   *
+   * Each applies every filter EXCEPT the one whose own label it sits on, so a
+   * toggle can never advertise a number it is itself about to exclude. v1
+   * shipped a counter that ignored the ingredient list entirely and read the
+   * same whether nothing or fourteen things were ticked; see PROMPTS.md 2.14.
+   */
+  const counts = useMemo(() => {
+    const base = {
+      ownedIds: setup.ingredientIds,
+      timeId: setup.timeId,
+      cuisineIds: setup.cuisineIds,
+      weightBands: setup.weightBands,
+      sortId: 'match',
+      sortDir: 'desc',
+    };
+    return {
+      // ignores readyOnly, because it labels the readyOnly toggle
+      ready: buildRecommendations(MEALS, {
+        ...base,
+        vegetarianOnly: listOptions.vegetarianOnly,
+        readyOnly: true,
+      }).length,
+      // ignores vegetarianOnly, because it labels the vegetarian toggle
+      vegetarian: buildRecommendations(MEALS, {
+        ...base,
+        readyOnly: listOptions.readyOnly,
+        vegetarianOnly: true,
+      }).length,
+      // what pressing Find Meals will actually show
+      setupTotal: buildRecommendations(MEALS, base).length,
+    };
+  }, [setup, listOptions.readyOnly, listOptions.vegetarianOnly]);
 
   const activeMeal = useMemo(() => {
     if (!activeMealId || !MEAL_BY_ID[activeMealId]) return null;
@@ -82,8 +97,7 @@ export default function App() {
   }, [activeMealId, setup.ingredientIds]);
 
   // `patch` may be an object, or a function of the current setup for updates
-  // that depend on what is already selected (toggling an ingredient, stepping
-  // the people count).
+  // that depend on what is already selected.
   function updateSetup(patch) {
     setSetup((current) => ({
       ...current,
@@ -92,16 +106,20 @@ export default function App() {
   }
 
   function updateFilters(patch) {
-    const { timeId, preferenceId, ...rest } = patch;
-    // Picking a new sort starts it in its own natural direction rather than
-    // inheriting the previous sort's, which would silently mean something else.
-    if (rest.sortId && rest.sortDir === undefined) {
-      rest.sortDir = defaultSortDir(rest.sortId);
-    }
-    if (timeId || preferenceId) {
-      updateSetup({ ...(timeId ? { timeId } : {}), ...(preferenceId ? { preferenceId } : {}) });
+    const { timeId, cuisineIds, weightBands, ...rest } = patch;
+    if (timeId !== undefined || cuisineIds !== undefined || weightBands !== undefined) {
+      updateSetup({
+        ...(timeId !== undefined ? { timeId } : {}),
+        ...(cuisineIds !== undefined ? { cuisineIds } : {}),
+        ...(weightBands !== undefined ? { weightBands } : {}),
+      });
     }
     if (Object.keys(rest).length > 0) {
+      // Picking a new sort starts it in its own natural direction rather than
+      // inheriting the previous one's, which would silently mean something else.
+      if (rest.sortId && rest.sortDir === undefined) {
+        rest.sortDir = defaultSortDir(rest.sortId);
+      }
       setListOptions((current) => ({ ...current, ...rest }));
     }
   }
@@ -136,7 +154,7 @@ export default function App() {
         {cover}
         <MealRecommendations
           meals={recommendations}
-          readyCount={readyCount}
+          counts={counts}
           setup={setup}
           filters={filters}
           onFilterChange={updateFilters}
@@ -154,8 +172,8 @@ export default function App() {
         setup={setup}
         onChange={updateSetup}
         onFindMeals={() => setScreen('results')}
-        resultCount={setupResultCount}
-        readyCount={readyCount}
+        resultCount={counts.setupTotal}
+        readyCount={counts.ready}
       />
     </>
   );
