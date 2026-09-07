@@ -148,7 +148,7 @@ both ways here. For me the ratio depended entirely on where the task boundary wa
 | Task boundary | Delegated |
 | --- | --- |
 | "Decide what the product is" | 0% — the idea was mine, and I rejected the six the tool proposed |
-| "Turn that into a specification" | ~90% — ChatGPT drafted every word of the prompt |
+| "Turn that into a specification" | The wording is entirely ChatGPT's; most of the feature list inside it is mine |
 | "Write and test the application" | ~100% — I wrote no code and ran no test |
 | **"Verify that it works"** | **~100%** |
 
@@ -158,20 +158,22 @@ of `PROMPTS.md` records what that cost.
 
 ### Whose defaults became the product's
 
-Writing this honestly took a second look, because my first draft of this section claimed things
-that are not mine.
+Writing this honestly took two passes, because my first draft of this section gave the tool credit
+for things I had asked for by name.
 
-**Mine, and traceable to one message in `PROMPTS.md` section 1:** the product itself — that you
-should be able to say what is in your fridge and be told what you can cook. Also that serving size
-should rescale quantities, that calories per person should be visible, and that a fitness mode and
-a quick mode should exist at all. That is the whole list.
+**Mine.** The product, and most of what it does. One paragraph of mine
+(`PROMPTS.md` section 1, round 1, quoted in full there) asked for: choosing the ingredients you
+have and being shown what you can cook; choosing a dish and being shown what to buy; cooking time;
+suggested servings; a people count that recomposes the meal; calories per dish; **calories per
+person**; a fitness option; and a simpler option for when you are busy. Nine features. Eight of
+them shipped. Only automatic multi-dish pairing was cut.
 
-**Not mine, and I had believed otherwise:** *ingredient match percentage* and the rule that
-*calories per person must not move when only the serving size changes*. Both were named by ChatGPT
-in round 1 while narrowing my brainstorm, and both are the interactions this document spends the
-most words praising. So are the four preference categories, the three time budgets, and the
-"nothing missing" filter. I had carried them as my own for two days because they arrived inside a
-specification I had approved.
+**Not mine.** *Ingredient match percentage* — the number the cards are built around and the thing
+that turns this from a recipe list into a pantry tool — was named by ChatGPT while narrowing that
+paragraph. So were difficulty and meal category as card fields, the "no missing ingredients"
+filter, the three fixed time budgets, and Family Meal as a fourth preference. It also supplied the
+*invariant* on a figure I had asked for: total calories move with the serving size, calories per
+person do not. I asked for the number; it decided what the number must never do.
 
 **Not anyone's — chosen because nobody specified:** default party size 2; default time budget 30
 minutes; a default sort called "Recommended" weighting match at 0.6 and preference at 0.4; the
@@ -183,8 +185,13 @@ item for item, the house style a model produces when no visual direction is give
 to me in the first reply as a choice being made. **Disclosed is not chosen.** I have a warm cream app
 because I never said anything about colour.
 
-There is a pattern across all three groups. The further a decision sat from the thing I typed, the
-more certain I was that I had made it.
+I got this section wrong in both directions before it settled. First I claimed the tool's ideas as
+mine, because they arrived inside a specification I had approved. Then, correcting that, I handed
+it features I had asked for by name, because by then I trusted its account of the build over my own
+memory of what I had typed.
+
+That is the more uncomfortable finding. Working this way did not just move decisions — it made me
+a poor witness to which ones had been mine, in both directions, within two days.
 
 ---
 

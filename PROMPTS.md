@@ -33,6 +33,10 @@ mine.** It was drafted by ChatGPT across four rounds, from my product idea, afte
 assignment brief. Recording that accurately matters more to me than claiming authorship, so this
 section is the log of those four rounds before section 2 picks up the build itself.
 
+**The full ChatGPT transcript is public here:**
+<https://chatgpt.com/share/6a9e3362-ff74-83ec-a9da-2e1c39de8376>
+Everything quoted in this section can be checked against it.
+
 Each round moved one thing.
 
 ### Round 0 — the tool proposed six products and I rejected all of them
@@ -51,14 +55,39 @@ from the tool's advice.
 
 ### Round 1 — scope
 
-My raw idea contained two products at once, and I said so: *"选择我目前有哪些食物原材料，输出可以做
-的菜，或者选择想要吃的菜，输出需要的原材料"* — pantry-to-dish **and** dish-to-shopping-list — plus
-servings, calories, a fitness mode and a busy mode.
+This is the message I wrote, in full. It is the only place in the project where the product came
+from a person rather than from a model, so it is quoted rather than summarised:
 
-The variable that moved was scope. ChatGPT reframed it from a recipe app to a *meal decision
-assistant*, made pantry-to-dish the core and dish-to-ingredients secondary, and named the two
-inventions that became the product's spine: **ingredient match percentage** and **smart serving
-scale** — the two interactions the reflection later spends the most time on.
+> **Me:** 我有一个idea，就是做一个食谱，选择我目前有哪些食物原材料，输出可以做的菜，或者选择想要吃的菜，输出
+> 需要的原材料，还有制作时间，建议用餐人数等等等等。然后还可以选择用餐人数，自动搭配菜肴，显示每道菜的卡路里
+> 和预计每人摄入的卡路里，如果健身的话也可以加入健身餐选项（更低卡科学），忙碌的话可以选择简单便捷的菜品。
+> 我实在brain storm，你帮我先refine一下
+
+Nine features are in that paragraph, and eight of them shipped:
+
+| What I asked for | Where it is in the app |
+| --- | --- |
+| 选择我目前有哪些食物原材料，输出可以做的菜 | The product. Screens 1 and 2 are this sentence. |
+| 选择想要吃的菜，输出需要的原材料 | The have / still-need lists on screen 3 |
+| 制作时间 | Prep, cook and total time |
+| 建议用餐人数 | `baseServings` on every meal |
+| 可以选择用餐人数 | The people stepper, and the serving stepper that rescales quantities |
+| 显示每道菜的卡路里 | Calories per serving |
+| 预计每人摄入的卡路里 | Calories per person — the figure the whole serving-scale interaction is built around |
+| 健身餐选项（更低卡科学） | The Fitness preference |
+| 忙碌 → 简单便捷的菜品 | The Quick & Easy preference |
+| 自动搭配菜肴 | **Did not ship.** Multi-dish meal composition was cut as out of scope. |
+
+The variable that moved in this round was scope, not content. ChatGPT reframed the pitch from a
+recipe app to a *meal decision assistant*, made pantry-to-dish primary and dish-to-ingredients
+secondary, and cut the automatic multi-dish pairing. What it **added** was smaller than what it
+kept: **ingredient match percentage** as a named idea, difficulty and meal category as card fields,
+the "no missing ingredients" filter, the three fixed time budgets, and a fourth preference,
+Family Meal, alongside the two I had asked for.
+
+It also gave the calories-per-person figure I had asked for its invariant: total calories move with
+the serving size, per-person calories do not. That framing is its contribution; the figure itself
+was in my paragraph.
 
 ### Round 2 — the user definition, where I was wrong
 
