@@ -11,7 +11,7 @@ Built for MGMT 6110 Human-AI Collaboration, Singapore Management University.
 
 - [PROMPTS.md](PROMPTS.md) - the working log of how this was built, including the prompts and steps that went wrong.
 - [REFLECTION.md](REFLECTION.md) - the five-question reflection, plus the further-action roadmap.
-- [RANKING-RULES.md](RANKING-RULES.md) - what every rule that ranks, scores or filters the meal list does, with its weights and a named owner.
+- [RANKING-RULES.md](RANKING-RULES.md) - what every rule that filters or orders the meal list does, with its numbers and a named owner. Nothing in v2 is scored.
 - [CHANGELOG.md](CHANGELOG.md) - every version, newest first, and which document describes which.
 
 > **Which version the documents describe.** `PROMPTS.md` and `REFLECTION.md` describe the state
@@ -31,8 +31,17 @@ Built for MGMT 6110 Human-AI Collaboration, Singapore Management University.
    filter to vegetarian only, or to meals that need no extra shopping.
 3. **Meal Detail** - the full recipe: what you have, what you still need and what the missing
    items cost, prep / cook / total time, price per person and for the whole dish, calories per
-   person and in total, protein / carbs / fat, a serving-size control that rescales every
-   quantity and every price, and step-by-step instructions.
+   person and in total, protein / carbs / fat both per serving and for the whole dish, and a
+   serving-size control that rescales every quantity, every line price and the whole-dish totals
+   while price per person and calories per person stay fixed. Then the numbered steps.
+
+A cover screen sits above screen 1 for three seconds on arrival, with a progress bar so the wait
+does not read as a freeze. Tap, click or any key skips it, and it is skipped outright for anyone
+whose system asks for reduced motion.
+
+Time, cuisine and weight stay editable on screen 2, behind the "Time, cuisine and weight"
+disclosure, and edits there write back to screen 1. The Find Meals button carries a live count
+that moves as you tick ingredients.
 
 All three screens live in one page, so moving between them never reloads the browser.
 
@@ -86,5 +95,5 @@ output directory `dist`).
 | `src/components/MealRecommendations.jsx` | Screen 2. Setup summary, filter bar, result count, meal list and empty state. |
 | `src/components/FilterBar.jsx` | Sort dropdown with an ascending/descending control, the vegetarian and "only meals I can cook now" toggles, and a disclosure holding time, cuisine and weight. |
 | `src/components/MealCard.jsx` | One meal summary card: name, match line and meter, time, calories, price, servings, tags and missing ingredients. |
-| `src/components/MealDetail.jsx` | Screen 3. Serving control, have / need ingredient lists with per-line prices, times, cost, nutrition, steps and the back button. |
-| `src/styles.css` | All styling. Mobile-first, warm palette, 48px minimum touch targets. |
+| `src/components/MealDetail.jsx` | Screen 3. Tag row, serving control, have / need ingredient lists with per-line prices, times, cost, nutrition per serving and whole dish, steps and the back button. |
+| `src/styles.css` | All styling. Mobile-first, warm palette, 48px touch targets on the primary controls; the compact "Clear all" (32px) and the second-level group headers (44px) are the two deliberate exceptions. |

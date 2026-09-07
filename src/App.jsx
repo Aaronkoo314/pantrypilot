@@ -88,6 +88,11 @@ export default function App() {
       }).length,
       // what pressing Find Meals will actually show
       setupTotal: buildRecommendations(MEALS, base).length,
+      // The setup screen's own version, applying only the controls that screen
+      // has. `ready` above carries the results-screen vegetarian toggle, which
+      // on setup would silently shape a number against a control that is not
+      // on the page - the same thing that made v1's counter unreconcilable.
+      readyForSetup: buildRecommendations(MEALS, { ...base, readyOnly: true }).length,
     };
   }, [setup, listOptions.readyOnly, listOptions.vegetarianOnly]);
 
@@ -173,7 +178,7 @@ export default function App() {
         onChange={updateSetup}
         onFindMeals={() => setScreen('results')}
         resultCount={counts.setupTotal}
-        readyCount={counts.ready}
+        readyCount={counts.readyForSetup}
       />
     </>
   );

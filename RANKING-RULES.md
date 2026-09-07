@@ -27,10 +27,11 @@ Nothing here is nutrition, dietary or medical advice, and no price here is a rea
 | Price per serving | S$1.39 to S$15.33, median S$5.50 |
 | Vegetarian meals | 14 of 47 |
 
-Four values on every meal are **derived from the recipe and never authored**: calories, the weight
-band, the vegetarian flag and the price. That is the single most important property in the data
+Five values on every meal are **derived from the recipe and never authored**: calories, total time,
+the weight band, the vegetarian flag and the price. That is the most important property in the data
 model, because it means a label on a card cannot drift away from the figure printed beside it. v1
-authored calories separately from the macros and they disagreed on 9 of its 11 meals.
+derived calories from the macros but rounded them to the nearest 5, and its whole-dish figures
+disagreed with its whole-dish macros on 9 of its 11 meals as a result.
 
 ---
 
@@ -45,8 +46,9 @@ matchPercent = round(100 × ingredients you have ÷ ingredients the recipe needs
 ```
 
 No weighting, no substitutions, no fuzzy matching. A clove of garlic counts exactly as much as
-750 g of pork belly. This is the one figure the user can check without trusting us, because the
-card prints "you have 7 of 11" beside the seven items it is counting.
+750 g of pork belly. This is the one figure the user can check without trusting us: the card
+prints "you have 7 of 11" and names the four it is *not* counting, under "Still need"; the detail
+screen lists the seven it is, under "You have (7)".
 
 **Known limit, unchanged from v1.** The pantry is a boolean: the app knows *whether* you have
 garlic, never *how much*. A meal can read 100% match and still leave you short at the stove.
@@ -136,14 +138,17 @@ Each price in the data file carries a comment giving the same figure in a form a
 That comment is not decoration. Nobody can eyeball whether `0.026` is right, and these numbers
 reach the screen.
 
-Because price is computed from quantities, it scales with the serving control alongside the
-quantities themselves, and the detail screen can total only the missing items to answer "what will
-this cost me tonight". **The prices are invented.** No shop is named, implied, or surveyed, and
-the app says so on both screens that show a figure.
+Because price is computed from quantities, the line prices, the whole-dish total and the cost of
+just the missing items all move with the serving control, while **price per person stays fixed —
+the same invariant as calories per person**. That is what lets the detail screen answer "what will
+this cost me tonight" as well as "what does this cost each".
+
+**The prices are invented.** No shop is named, implied, or surveyed, and the app says so on both
+screens that show a figure.
 
 ---
 
-## 7. The filters — all four exclude
+## 7. The filters — all five exclude
 
 `src/utils/mealMatching.js` · `buildRecommendations()`
 
@@ -195,9 +200,22 @@ precisely the defect this file recorded against v1's Regular preference. The fix
 
 `src/App.jsx` · `counts`
 
-The readyOnly and vegetarian toggles each carry a count. **Each count applies every filter except
-the one whose own label it sits on**, so a toggle can never advertise a number it is itself about
-to exclude.
+Three counts reach the screen, and all three follow one rule: **a count applies every filter
+except the one whose own label it sits on, and never a filter the user cannot see from where they
+are standing.**
+
+| Count | Where it shows | What it applies |
+| --- | --- | --- |
+| `setupTotal` | the Find Meals button | the setup filters, and neither results-screen toggle |
+| `readyForSetup` | "N need no shopping", on setup | the setup filters plus readyOnly |
+| `ready` | the readyOnly toggle, on results | everything except readyOnly |
+| `vegetarian` | the vegetarian toggle, on results | everything except vegetarianOnly |
+
+The second row exists because of the first half of that rule and the fourth because of the second.
+`ready` carries the results-screen vegetarian toggle, which is right on the results screen and
+wrong on setup: a user who turns Vegetarian on, goes back, and reads "3 need no shopping" would
+have no control in front of them that explains the 3. So setup gets its own count. This was found
+by checking this document against the code, not by using the app.
 
 This is the general form of the worst defect in v1: a counter on the primary button that read the
 same whether nothing or fourteen ingredients were selected, because it never referenced the
@@ -219,8 +237,9 @@ records what that cost.
 | 8 · The four sorts | — | No, plain orderings |
 | 9 · The two counts | Derived, each excluding its own filter | No |
 
-Two things are authored by a person and therefore need a person to check them: **the macros and
-times on all 47 meals**, and **the 93 unit prices**. Everything else in this table is arithmetic
-on those. That is the shortest honest statement of where the human review has to go, and it is
+Three things are authored by a person and therefore need a person to check them: **the macros and
+times on all 47 meals**, **the ingredient quantities and base servings on those meals**, and
+**the 93 unit prices**. Everything else in this table is arithmetic on those three — which means a
+wrong quantity reaches the screen as a wrong price with no arithmetic error anywhere. That is the shortest honest statement of where the human review has to go, and it is
 the same conclusion `REFLECTION.md` reached about v1 — the cheap work is the code, and the
 expensive work is the judgement nobody can delegate.

@@ -38,9 +38,10 @@ is the batch where a human has to check numbers: 47 meals' macros and times, and
   fish sauce, both curry pastes and dried shrimp. A filter looking only for meat would call a
   Thai green curry vegetarian.
 - **Price.** Every ingredient carries an invented unit price in Singapore dollars. The card shows
-  price per person; the detail screen shows per person, whole dish, and the cost of just the
-  items you are missing. All of it scales with the serving control. The prices are invented and
-  no shop is named or implied.
+  price per person; the detail screen shows per person, whole dish, the cost of just the items
+  you are missing, and a price on every ingredient row. Quantities, line prices, the whole-dish
+  total and the shopping cost all scale with the serving control; price per person stays fixed,
+  like calories per person. The prices are invented and no shop is named or implied.
 - **Price sorting**, ascending or descending, along with the existing three.
 
 ### Changed
@@ -59,19 +60,24 @@ is the batch where a human has to check numbers: 47 meals' macros and times, and
   repeated the unit on every line, which is how a price model drifts out of agreement with itself.
 - The filter bar keeps sort and the two toggles visible and folds time, cuisine and weight — all
   answered two taps earlier on setup — behind one disclosure that names what is active.
-- Cards show time, calories, price and servings. v1's "Serves" figure was the same number on
-  every card and its difficulty was Easy on most; both moved to the tag row where they cost no
-  vertical space.
+- Cards show time, calories, price and servings. v1's "Serves" was the user's chosen party size,
+  identical on every card and therefore carrying no information; it now shows the recipe's own
+  base servings, which varies. Difficulty was Easy on most cards and moved to the tag row, where
+  it costs no vertical space.
 - The empty state now offers the undo for whichever filter is actually binding, instead of
   sending the user to another screen to guess.
+- Every count on screen applies every filter except the one whose own label it sits on, and never
+  a filter the user cannot see from where they are standing. This is the generalised form of the
+  v1 counter defect in `PROMPTS.md` §2.14.
 
 ### Removed
 
 - The four meal preferences, and with them `fitnessSuitability`, `familyFriendly`,
   `preferenceScore` and `isStrongPreferenceFit`.
-- **The "Recommended" sort.** With preferences gone it was ingredient match under a second name —
-  two controls producing one list, which is exactly the defect `RANKING-RULES.md` recorded against
-  v1's Regular preference. Deleted rather than reimplemented.
+- **The "Recommended" and "Preference fit" sorts.** Both were scores over the preferences. With
+  those gone, Recommended would have been ingredient match under a second name — two controls
+  producing one list, which is exactly the defect `RANKING-RULES.md` recorded against v1's Regular
+  preference. Deleted rather than reimplemented, which takes the sorts from five to four.
 
 ### Note on how the data was produced
 
@@ -140,14 +146,16 @@ detail screen whose serving control rescales every quantity while calories per p
 
 Front end only. No backend, no network calls, no accounts. All data invented and held in one file.
 
-Notable fixes made before submission, each recorded in `PROMPTS.md`:
+Notable fixes made before submission:
 
 - The Find Meals counter ignored the selected ingredients, so it read the same number whether
   nothing or fourteen things were ticked (`PROMPTS.md` §2.14).
 - Whole-dish calories disagreed with whole-dish macros on 9 of the 11 meals, because the
   per-serving figure was rounded before being multiplied (`PROMPTS.md` §2.17).
 - The match bar's four fill colours measured 1.05:1 to 1.19:1 against the card and did not order
-  correctly by lightness; four palette tokens failed WCAG 1.4.3 across about a dozen uses.
+  correctly by lightness; four palette tokens failed WCAG 1.4.3 across about a dozen uses
+  (commit `43d3345` — this one is not in `PROMPTS.md`, whose log deliberately stops at the first
+  push).
 - `tools/build_preview.py` carried the repository's only external URLs and its only real company
   name, in a project whose own guardrails forbade both. Removed.
 
@@ -155,13 +163,17 @@ Notable fixes made before submission, each recorded in `PROMPTS.md`:
 
 ## Planned
 
-`v2` continues in three more batches. The agreed shape, and the reasoning behind each decision,
-is in the further-action section of [`REFLECTION.md`](REFLECTION.md).
+What was planned as batches 2 and 3 shipped together in commit `09af03b`, and the documents were
+brought back into line straight after, so the roadmap in
+[`REFLECTION.md`](REFLECTION.md)'s further-action section is now spent. What is left, none of it
+started:
 
-- **Batch 2** — vegetarian filter, estimated price per ingredient.
-- **Batch 3** — Chinese, Western and Thai cuisines; roughly 10–12 new meals and 30 new
-  ingredients; light / medium / heavy replacing the four preferences, Fitness included.
-- **Batch 4** — documents brought back into line with the app.
+- **A cook plan and shopping list** — mark several meals, get one merged list of what to buy.
+  Blocked on a real limit rather than on effort: the pantry is a boolean, so the app knows you
+  have garlic but not how much, and a merged list will confidently omit an ingredient you are
+  three cloves short of.
+- **Remembered staples**, in browser storage, so the ingredient list is not re-ticked every visit.
+- **The four remaining cuisines** — Japanese, French, Spanish, Italian.
 
 Halal filtering was considered and dropped. A halal claim depends on slaughter method,
 certification and cross-contamination, none of which an ingredient list records, so the app could
