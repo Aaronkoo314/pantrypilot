@@ -316,27 +316,7 @@ chips = 14   →  "8 meals · 3 need no shopping"
 **The test is four seconds long: tick an ingredient, watch whether the number moves.** It was never
 run, because the screen looked finished and the number looked like a number.
 
-### 2.15 Ambiguous instructions of my own
 
-⚠️ Two of my prompts were ambiguous enough to need checking rather than guessing:
-
-- **"然后可以删掉提交部分的内容"** — "delete the submission part" or "delete the commit content"?
-  The second reading would have gutted the reflection, since the commit is its central evidence.
-  The interpretation was stated back to me before acting.
-- **"改了"** — "I changed it" or "go change it"? Resolved by checking the file: it was unmodified,
-  so it meant the latter.
-
-Worth logging because short prompts in a second language carry ambiguity that long ones do not,
-and the cost of a wrong reading rises with how destructive the action is.
-
-### 2.16 An edit that silently did not apply
-
-⚠️ While removing the deleted script from the README, one of two edits failed: the first edit
-deleted the line containing `build_preview.py`, which broke the multi-line string the second edit
-was matching against. No error was raised. The README was left with a section heading followed by
-a sentence fragment pointing at a file that no longer existed.
-
-Caught by grepping the README afterwards rather than by trusting the edit reported success.
 
 ---
 
