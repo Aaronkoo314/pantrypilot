@@ -471,6 +471,10 @@ function caloriesFromMacros(meal) {
  *   - lighter servings (lower calories per serving)     -> up to 30 points
  *   - macro balance    (fat near ~30% of energy)        -> up to 20 points
  * This is a prototype ranking signal, not nutrition or medical advice.
+ *
+ * The four constants below (12, 750, 0.30 and the 50/30/20 split) are stated
+ * in plain English, with what they actually rank, in RANKING-RULES.md rule 3.
+ * Change a number here and change it there.
  */
 function fitnessSuitabilityFor(meal, calories) {
   const proteinPer100kcal = (meal.proteinGrams / calories) * 100;

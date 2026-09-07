@@ -73,7 +73,13 @@ to be abandoned.
 
 I had a verified, three-screen React application — thirty ingredients, eleven recipes, a working
 serving-scaling model — running and clicked through on a machine **with no Node.js installed at
-all**. Not "installed later". Not at any point during the first build.
+all**. The entire app was written and exercised before any JavaScript toolchain existed on the
+laptop.
+
+Being exact about this, because the repository can be used to check it: Node was installed later
+the same evening, and `npm install` ran at 19:53 — four minutes before the first commit at 19:57,
+which is why `package-lock.json` is in it. The claim is about how the app was *built*, not about
+the state of the machine for the whole session.
 
 ```
 $ node -v
@@ -141,21 +147,33 @@ both ways here. For me the ratio depended entirely on where the task boundary wa
 
 | Task boundary | Delegated |
 | --- | --- |
+| "Decide what the product is" | 0% — the idea was mine, and I rejected the six the tool proposed |
+| "Turn that into a specification" | ~90% — ChatGPT drafted every word of the prompt |
 | "Write and test the application" | ~100% — I wrote no code and ran no test |
-| "Decide what the application is" | 0% |
 | **"Verify that it works"** | **~100%** |
 
-The third row is the one nobody measures and the one that mattered. The app was checked by the
+The last row is the one nobody measures and the one that mattered. The app was checked by the
 system that wrote it, and I read a summary of that self-check and called it verified. Section 2.14
 of `PROMPTS.md` records what that cost.
 
 ### Whose defaults became the product's
 
-**Mine:** ingredient match as the organising idea, the four preference categories, the three time
-budgets, the "nothing missing" filter, and the rule that calories per person must not move when only
-the serving size does.
+Writing this honestly took a second look, because my first draft of this section claimed things
+that are not mine.
 
-**Not mine — chosen because nobody specified:** default party size 2; default time budget 30
+**Mine, and traceable to one message in `PROMPTS.md` section 1:** the product itself — that you
+should be able to say what is in your fridge and be told what you can cook. Also that serving size
+should rescale quantities, that calories per person should be visible, and that a fitness mode and
+a quick mode should exist at all. That is the whole list.
+
+**Not mine, and I had believed otherwise:** *ingredient match percentage* and the rule that
+*calories per person must not move when only the serving size changes*. Both were named by ChatGPT
+in round 1 while narrowing my brainstorm, and both are the interactions this document spends the
+most words praising. So are the four preference categories, the three time budgets, and the
+"nothing missing" filter. I had carried them as my own for two days because they arrived inside a
+specification I had approved.
+
+**Not anyone's — chosen because nobody specified:** default party size 2; default time budget 30
 minutes; a default sort called "Recommended" weighting match at 0.6 and preference at 0.4; the
 serving range 1–12; the rounding rule that renders 1.5 onions as "1.5" but 230 g of rice to the
 nearest ten; the empty-state wording; scroll-to-top on navigation.
@@ -164,6 +182,9 @@ And the look. The app is warm cream with a terracotta accent and rounded cards �
 item for item, the house style a model produces when no visual direction is given. It was disclosed
 to me in the first reply as a choice being made. **Disclosed is not chosen.** I have a warm cream app
 because I never said anything about colour.
+
+There is a pattern across all three groups. The further a decision sat from the thing I typed, the
+more certain I was that I had made it.
 
 ---
 
@@ -180,13 +201,37 @@ Me:  为什么用的是javascript 不是typescipt
 It did not change a line of code — I chose to defer the conversion. It changed something more
 useful: a default that had been mentioned once in a bullet list and then silently governed 2,400
 lines became a decision with a stated reason and an owner. That is the difference between a choice
-being *disclosed* and a choice being *made*, and it is the only point in the whole session where I
-closed that gap myself.
+being *disclosed* and a choice being *made*.
+
+It was not, however, the first time. Two earlier moments are logged in `PROMPTS.md` section 1,
+before any code existed. In round 0 the tool read the assignment, proposed six products and
+recommended a book-discovery app; **I rejected all six and supplied the cooking idea myself**, and
+every screen in the submitted app descends from that override rather than from its advice. Then in
+round 2 the direction reversed.
 
 Two smaller ones. I killed a background process before I understood it (`我关掉了`, then
 `这个running task是在干什么`) — control first, explanation second, which for a process on my own
 machine is the right order. And I chose the repository location and visibility rather than accepting
 a suggestion.
+
+### Where I was overruled, and was wrong
+
+A category I did not expect to need. Asked to define the user, I argued for the widest possible
+audience:
+
+```
+Me:  目标用户是所有人群，所以覆盖面要广，从小白，到学生，到主妇到大厨都可以使用
+```
+
+The tool refused, and cited the assignment back at me: a weak product definition starts with an
+over-broad user. It narrowed the audience to non-professional home cooks and cut professional
+chefs explicitly. That narrowed wording is verbatim in the GOAL section of the prompt that built
+this app, and Q1 above is written from it.
+
+I was in the loop, I had an opinion, I was overruled, and the product is better for it. Any honest
+account of where human judgment is needed has to include the case where it was supplied and was
+wrong — otherwise "keep a human in the loop" is an article of faith rather than a claim about
+outcomes.
 
 ### Where I was in the loop and added nothing
 
@@ -318,8 +363,11 @@ changing the serving size could have produced a total that contradicted its own 
 screen, and the one guarantee I cared most about — calories per person stay fixed — would have been
 quietly false.
 
-That is the part worth sitting with. My brief was long, structured, and specific: role, goal, output,
-guardrails, context, counts, field lists. It was detailed exactly where detail was easy — how many
+That is the part worth sitting with. The brief was long, structured, and specific: role, goal,
+output, guardrails, context, counts, field lists. It was also **drafted for me by ChatGPT over four
+rounds** (`PROMPTS.md` section 1) and pasted into the builder without my changing a word — which
+makes the point sharper rather than softer, because two systems and one person all read that
+specification and none of us noticed what it left out. It was detailed exactly where detail was easy — how many
 ingredients, how many meals, which fields — and silent exactly where it mattered: what must stay
 consistent with what. **I thought the specification was complete because it was long.**
 

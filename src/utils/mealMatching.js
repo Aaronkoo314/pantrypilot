@@ -63,6 +63,10 @@ export function ingredientNames(lines) {
  *
  * Fitness deliberately uses only the dataset's own nutrition signal
  * (fitnessSuitability = higher protein, lower calories, balanced macros).
+ *
+ * These weights are stated in plain English, with the order they actually
+ * produce on the eleven meals, in RANKING-RULES.md (rules 4, 5 and 6).
+ * Change a number here and change it there.
  */
 export function preferenceScore(meal, preferenceId) {
   switch (preferenceId) {
@@ -125,6 +129,8 @@ export function buildRecommendations(meals, settings) {
         ...matched,
         preferenceScore: prefScore,
         // Default ranking: mostly "can I actually cook this", partly "does it suit me".
+        // See RANKING-RULES.md rule 2 for what the 60/40 blend does in practice -
+        // preference contributes less than 40% because its scores do not span 0-100.
         recommendedScore: matched.matchPercent * 0.6 + prefScore * 0.4,
       };
     })

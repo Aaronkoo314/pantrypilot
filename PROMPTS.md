@@ -11,6 +11,10 @@ that produced the app, and — as the brief requires — the ones that went wron
 were more of the second kind than I expected, and several of the most useful moments in
 the build were failures rather than successes.
 
+Two tools were used, and section 1 is explicit about which did what. The master prompt was
+drafted by ChatGPT over four rounds from a product idea of mine; the build itself was done in
+Claude Code from that prompt. The final prompt wording is not mine and this log says so.
+
 Entries are marked:
 
 | Mark | Meaning |
@@ -21,10 +25,76 @@ Entries are marked:
 
 ---
 
-## 1. The opening brief
+## 1. Where the master prompt came from
 
-One long prompt, written before any code existed. It is the single most consequential
-thing I typed, and roughly 90% of the finished app traces directly to it.
+The prompt below is the single most consequential thing in this project — roughly 90% of the
+finished app traces directly to it. **I did not write it in one go, and the final wording is not
+mine.** It was drafted by ChatGPT across four rounds, from my product idea, after I uploaded the
+assignment brief. Recording that accurately matters more to me than claiming authorship, so this
+section is the log of those four rounds before section 2 picks up the build itself.
+
+Each round moved one thing.
+
+### Round 0 — the tool proposed six products and I rejected all of them
+
+I uploaded `MGMT6110_Problem_Set_1.html` and asked only whether it could be read. ChatGPT read the
+constraints and came back with six candidate products — a layered book-discovery app, an
+investment watchlist, a gym-buddy matcher, a study-sprint planner, a restaurant picker and a
+retail stock dashboard — and recommended the first:
+
+> "如果是我替你选，我会直接做 BookPath。"
+
+🔑 **I did not take the recommendation.** I replied with an entirely different idea of my own:
+a cooking app where you say what is in your fridge and it tells you what you can make. Nothing in
+the six suggestions led to it. Every screen in the submitted app descends from that override, not
+from the tool's advice.
+
+### Round 1 — scope
+
+My raw idea contained two products at once, and I said so: *"选择我目前有哪些食物原材料，输出可以做
+的菜，或者选择想要吃的菜，输出需要的原材料"* — pantry-to-dish **and** dish-to-shopping-list — plus
+servings, calories, a fitness mode and a busy mode.
+
+The variable that moved was scope. ChatGPT reframed it from a recipe app to a *meal decision
+assistant*, made pantry-to-dish the core and dish-to-ingredients secondary, and named the two
+inventions that became the product's spine: **ingredient match percentage** and **smart serving
+scale** — the two interactions the reflection later spends the most time on.
+
+### Round 2 — the user definition, where I was wrong
+
+⚠️ I pushed back on the narrowed audience and argued for the widest possible one:
+
+> **Me:** 目标用户是所有人群，所以覆盖面要广，从小白，到学生，到主妇到大厨都可以使用
+
+The tool refused, and cited the assignment against me — a weak product definition starts with an
+over-broad user, and "for people who want to be organised" is a category rather than a user. It
+narrowed to *non-professional home cooks, including beginners, students, busy workers, parents,
+and experienced everyday cooks*, and explicitly cut professional chefs on the grounds that their
+real job is recipe development and cost control, not deciding what to cook tonight.
+
+**I accepted, and that wording is verbatim in the GOAL section of the final prompt.** This is the
+one round where the human in the loop was overruled and the output improved because of it.
+
+### Round 3 — the guardrails, which grew out of the earlier rounds
+
+I asked for the result in the course's R·G·O·G·C structure. The GUARDRAILS section that came back
+was not written from scratch; it is an accumulation of constraints discovered while *rejecting*
+the earlier ideas:
+
+| Guardrail in the final prompt | Where it came from |
+| --- | --- |
+| "Do NOT use real restaurant, food-delivery, grocery, or company names, logos, or trademarks." | The rejected investment-dashboard idea in round 0, flagged as *"不能用真实公司名"* |
+| "Do NOT call Gemini or any other AI model." | The rejected book-discovery idea in round 0, flagged as *"这次不能真的调用 AI，只能用 invented book data"* |
+| "Do NOT present nutritional information as medical advice." and "The Fitness option should only prioritize meals that are relatively higher in protein, lower in calories, and nutritionally balanced within the invented dataset." | **My own fitness request in round 1**, answered with a warning that it would drag in *"BMI / TDEE / macro targets / weight-loss goals / dietary medical advice — scope 会爆炸"* |
+
+The last row is the one worth noticing. **A guardrail exists in the shipped prompt because a
+feature I asked for was identified as a scope failure before it was built.** The whole Fitness
+section of `RANKING-RULES.md`, and the disclaimer rendered on two screens of the app, descend from
+that exchange.
+
+### The prompt that resulted
+
+Pasted into Claude Code unchanged — I altered not one word of it.
 
 > **ROLE:** You are a senior front-end developer building a clean, mobile-friendly React web app.
 >
@@ -97,6 +167,10 @@ There was no JavaScript toolchain on the laptop at all. Rather than stop, the to
 89-line Python script that concatenated the source files, stripped the ES module syntax, and
 compiled the JSX in the browser through Babel, then served it over a local HTTP server. The
 whole app was built and exercised this way before Node existed on the machine.
+
+Node was installed later the same evening (section 2.6), and `npm install` ran at 19:53, four
+minutes before the first commit at 19:57 — which is why `package-lock.json` appears in it. The
+no-toolchain claim covers the construction of the app, not the whole session.
 
 🔑 That script became a problem the next morning — see 2.11 — but it is the reason there was
 anything to look at on day one.
@@ -373,6 +447,7 @@ serving size, and calories per person still do not move when only the serving si
 
 | § | Failure | Cost |
 | --- | --- | --- |
+| 1, round 2 | I argued for "everyone" as the target user and was overruled | Would have failed the assignment's own test for a weak product definition |
 | 2.1 | No Node.js on the machine | Whole build routed through a Python harness |
 | 2.2 | Shell heredoc quoting | One wasted attempt on a 500-line file |
 | 2.3 | Stale closure dropped 13 of 14 selections | Real bug; found by automated testing |
@@ -389,13 +464,13 @@ serving size, and calories per person still do not move when only the serving si
 | 2.16 | An edit reported success but did not apply | Left a broken README section |
 | 2.17 | Whole-dish calories disagreed with whole-dish macros | 9 of 11 meals; on screen the entire time |
 
-Fifteen failures across fourteen sections. The split matters more than the count:
+Sixteen failures across fifteen sections. The split matters more than the count:
 
 | Kind | Sections | Count |
 | --- | --- | --- |
 | Environment and tooling friction | 2.1, 2.2, 2.4, 2.6, 2.7, 2.12, 2.13 | 7 |
 | Defects in the product itself | 2.3, 2.5 (×2), 2.14, 2.17 | 5 |
-| Failures of my own process | 2.9, 2.11, 2.15, 2.16 | 4 |
+| Failures of my own judgement or process | §1 round 2, 2.9, 2.11, 2.15, 2.16 | 5 |
 
 The tooling friction cost time and nothing else. The four in the last row are the ones worth
 reading: none of them were caused by the tool, and all four would have been caught by a person

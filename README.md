@@ -11,6 +11,7 @@ Built for MGMT 6110 Human-AI Collaboration, Singapore Management University.
 
 - [PROMPTS.md](PROMPTS.md) - the working log of how this was built, including the prompts and steps that went wrong.
 - [REFLECTION.md](REFLECTION.md) - the five-question reflection, plus the further-action roadmap.
+- [RANKING-RULES.md](RANKING-RULES.md) - what every rule that ranks, scores or filters the meal list does, with its weights and a named owner.
 
 ## The user journey
 
@@ -73,6 +74,6 @@ output directory `dist`).
 | `src/components/IngredientPicker.jsx` | The searchable, category-grouped ingredient chips used by Screen 1. |
 | `src/components/MealRecommendations.jsx` | Screen 2. Setup summary, filter bar, result count, meal list and empty state. |
 | `src/components/FilterBar.jsx` | Time / preference filters, sort dropdown and the "only meals I can cook now" toggle. |
-| `src/components/MealCard.jsx` | One meal summary card: name, match bar, time, servings, calories, difficulty, tags and missing ingredients. |
+| `src/components/MealCard.jsx` | One meal summary card: name, match line and meter, time, servings, calories, difficulty, tags and missing ingredients. |
 | `src/components/MealDetail.jsx` | Screen 3. Serving control, have / need ingredient lists, times, nutrition, steps and the back button. |
 | `src/styles.css` | All styling. Mobile-first, warm palette, 48px minimum touch targets. |
