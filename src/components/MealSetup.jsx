@@ -7,8 +7,24 @@ const MAX_PEOPLE = 12;
 /**
  * Screen 1: the user tells PantryPilot what they have and what they need.
  */
-export default function MealSetup({ setup, onChange, onFindMeals, resultCount }) {
+export default function MealSetup({
+  setup,
+  onChange,
+  onFindMeals,
+  resultCount,
+  readyCount,
+}) {
   const { ingredientIds, people, timeId, preferenceId } = setup;
+
+  const mealWord = resultCount === 1 ? 'meal' : 'meals';
+  // Before any ingredients are picked there is nothing to say about shopping,
+  // so the note reports the time budget instead of a count stuck at zero.
+  const buttonNote =
+    ingredientIds.length === 0
+      ? `${resultCount} ${mealWord} fit your time`
+      : `${resultCount} ${mealWord} · ${readyCount} ${
+          readyCount === 1 ? 'needs' : 'need'
+        } no shopping`;
 
   function toggleIngredient(id) {
     onChange((current) => ({
@@ -121,9 +137,7 @@ export default function MealSetup({ setup, onChange, onFindMeals, resultCount })
       <div className="sticky-bar">
         <button type="button" className="primary-button" onClick={onFindMeals}>
           Find Meals
-          <span className="button-note">
-            {resultCount} {resultCount === 1 ? 'meal' : 'meals'} fit right now
-          </span>
+          <span className="button-note">{buttonNote}</span>
         </button>
       </div>
     </div>

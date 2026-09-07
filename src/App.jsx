@@ -59,7 +59,8 @@ export default function App() {
     ).length;
   }, [setup.timeId, setup.ingredientIds]);
 
-  // Count shown on the Find Meals button, ignoring the results-screen toggles.
+  // How many cards the results screen will actually show, before the
+  // results-screen toggles are applied. Moves with the time budget.
   const setupResultCount = useMemo(() => {
     const limit = timeLimitMinutes(setup.timeId);
     return MEALS.filter((meal) => meal.totalMinutes <= limit).length;
@@ -127,6 +128,7 @@ export default function App() {
       onChange={updateSetup}
       onFindMeals={() => setScreen('results')}
       resultCount={setupResultCount}
+      readyCount={readyCount}
     />
   );
 }
