@@ -450,10 +450,18 @@ const RAW_MEALS = [
  * 4. DERIVED MEAL FIELDS
  * ---------------------------------------------------------------- */
 
-/** Calories per serving, kept consistent with the macros (4 / 4 / 9 kcal per gram). */
+/**
+ * Calories per serving, derived from the macros at 4 / 4 / 9 kcal per gram.
+ *
+ * The value is deliberately NOT rounded. Rounding it to the nearest 5 made the
+ * detail screen contradict itself once the serving size changed: the whole-dish
+ * total multiplied the rounded figure while the whole-dish macros multiplied the
+ * exact grams, so 26 g protein / 34 g carbs / 12 g fat at two servings displayed
+ * 700 kcal beside macros that derive to 696. Keeping the exact value makes the
+ * two columns agree at every serving size.
+ */
 function caloriesFromMacros(meal) {
-  const raw = meal.proteinGrams * 4 + meal.carbGrams * 4 + meal.fatGrams * 9;
-  return Math.round(raw / 5) * 5;
+  return meal.proteinGrams * 4 + meal.carbGrams * 4 + meal.fatGrams * 9;
 }
 
 /**

@@ -53,6 +53,8 @@ output directory `dist`).
 - No real brands, restaurants, shops or delivery services are referenced.
 - Nutrition figures are illustrative sample data for a prototype. They are **not**
   health, dietary or medical advice, and the app says so on screen.
+- The name PantryPilot was chosen independently for this coursework prototype. No
+  affiliation with any similarly named product or service is implied.
 - The Fitness preference ranks meals only by the dataset's own nutrition signal:
   higher protein per calorie, lower calories per serving, and reasonably balanced macros.
 

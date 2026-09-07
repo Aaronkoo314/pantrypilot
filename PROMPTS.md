@@ -341,6 +341,32 @@ a sentence fragment pointing at a file that no longer existed.
 
 Caught by grepping the README afterwards rather than by trusting the edit reported success.
 
+### 2.17 The second defect adversarial review found
+
+⚠️ Running the same review process again before submission — three agents, this time against the
+submission checklist rather than the code — turned up a numerical inconsistency that had been on
+screen the whole time.
+
+Calories per serving were rounded to the nearest 5. The whole-dish total multiplied that *rounded*
+figure, while the whole-dish macros multiplied the *exact* grams. The two columns sat side by side
+on the detail screen and disagreed:
+
+```
+Power Protein Yogurt Bowl, 2 servings
+  displayed total      700 kcal
+  52 g × 4 + 68 g × 4 + 24 g × 9 = 696 kcal      ← 4 kcal apart
+```
+
+Nine of the eleven meals were affected. The worst gap was 24 kcal, on the pasta at twelve servings.
+
+The irony is exact. Section 2.11 records that the build made calories a *computed* value
+specifically so the screens could not contradict each other, and called that the thing the tool got
+right where my specification was wrong. It got the principle right and the rounding wrong, and I
+verified the principle without ever checking two adjacent columns against each other.
+
+Fixed by not rounding. The exact value is now used, so the total and the macros agree at every
+serving size, and calories per person still do not move when only the serving size does.
+
 ---
 
 ## 3. Index of what went wrong
@@ -361,13 +387,14 @@ Caught by grepping the README afterwards rather than by trusting the edit report
 | **2.14** | **Setup counter ignored ingredients** | **Survived every check; found by adversarial review** |
 | 2.15 | My own prompts were ambiguous enough to need checking | Two near-misses, one of them destructive |
 | 2.16 | An edit reported success but did not apply | Left a broken README section |
+| 2.17 | Whole-dish calories disagreed with whole-dish macros | 9 of 11 meals; on screen the entire time |
 
-Fourteen failures across thirteen sections. The split matters more than the count:
+Fifteen failures across fourteen sections. The split matters more than the count:
 
 | Kind | Sections | Count |
 | --- | --- | --- |
 | Environment and tooling friction | 2.1, 2.2, 2.4, 2.6, 2.7, 2.12, 2.13 | 7 |
-| Defects in the product itself | 2.3, 2.5 (×2), 2.14 | 4 |
+| Defects in the product itself | 2.3, 2.5 (×2), 2.14, 2.17 | 5 |
 | Failures of my own process | 2.9, 2.11, 2.15, 2.16 | 4 |
 
 The tooling friction cost time and nothing else. The four in the last row are the ones worth
