@@ -12,7 +12,7 @@ MGMT 6110 Human-AI Collaboration, Singapore Management University.
 | Human decisions during the build | 4 |
 
 Every number, quoted prompt and file path below comes from the build session itself and has been
-re-checked against the repository. The working log is in [`PROMPTS.md`](PROMPTS.md).
+re-checked against the repository. The working log is in [`prompts.md`](prompts.md).
 
 > **This document describes the version tagged `v1-submitted`, not the app currently on `main`.**
 > It is the graded artefact and is deliberately left as it was submitted. v2 replaced the dataset
@@ -161,7 +161,7 @@ both ways here. For me the ratio depended entirely on where the task boundary wa
 
 The last row is the one nobody measures and the one that mattered. The app was checked by the
 system that wrote it, and I read a summary of that self-check and called it verified. Section 2.14
-of `PROMPTS.md` records what that cost.
+of `prompts.md` records what that cost.
 
 ### Whose defaults became the product's
 
@@ -169,7 +169,7 @@ Writing this honestly took two passes, because my first draft of this section ga
 for things I had asked for by name.
 
 **Mine.** The product, and most of what it does. One paragraph of mine
-(`PROMPTS.md` section 1, round 1, quoted in full there) asked for: choosing the ingredients you
+(`prompts.md` section 1, round 1, quoted in full there) asked for: choosing the ingredients you
 have and being shown what you can cook; choosing a dish and being shown what to buy; cooking time;
 suggested servings; a people count that recomposes the meal; calories per dish; **calories per
 person**; a fitness option; and a simpler option for when you are busy. Nine features. Eight of
@@ -217,7 +217,7 @@ useful: a default that had been mentioned once in a bullet list and then silentl
 lines became a decision with a stated reason and an owner. That is the difference between a choice
 being *disclosed* and a choice being *made*.
 
-It was not, however, the first time. Two earlier moments are logged in `PROMPTS.md` section 1,
+It was not, however, the first time. Two earlier moments are logged in `prompts.md` section 1,
 before any code existed. In round 0 the tool read the assignment, proposed six products and
 recommended a book-discovery app; **I rejected all six and supplied the cooking idea myself**, and
 every screen in the submitted app descends from that override rather than from its advice. Then in
@@ -379,7 +379,7 @@ quietly false.
 
 That is the part worth sitting with. The brief was long, structured, and specific: role, goal,
 output, guardrails, context, counts, field lists. It was also **drafted for me by ChatGPT over four
-rounds** (`PROMPTS.md` section 1) and pasted into the builder without my changing a word — which
+rounds** (`prompts.md` section 1) and pasted into the builder without my changing a word — which
 makes the point sharper rather than softer, because two systems and one person all read that
 specification and none of us noticed what it left out. It was detailed exactly where detail was easy — how many
 ingredients, how many meals, which fields — and silent exactly where it mattered: what must stay

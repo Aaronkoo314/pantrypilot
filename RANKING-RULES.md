@@ -219,7 +219,7 @@ by checking this document against the code, not by using the app.
 
 This is the general form of the worst defect in v1: a counter on the primary button that read the
 same whether nothing or fourteen ingredients were selected, because it never referenced the
-ingredient list at all. It survived every check and three screenshots. `PROMPTS.md` section 2.14
+ingredient list at all. It survived every check and three screenshots. `prompts.md` section 2.14
 records what that cost.
 
 ---

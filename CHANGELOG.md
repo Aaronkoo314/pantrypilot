@@ -10,7 +10,7 @@ MGMT 6110 Problem Set 1.
 | Document | Describes |
 | --- | --- |
 | [`REFLECTION.md`](REFLECTION.md) | v1 as submitted. It is the graded artefact and is not rewritten. |
-| [`PROMPTS.md`](PROMPTS.md) | v1 as submitted, from the first prompt to the first push. Same. |
+| [`prompts.md`](prompts.md) | v1 as submitted, from the first prompt to the first push. Same. |
 | [`RANKING-RULES.md`](RANKING-RULES.md) | **the current app.** Rewritten for v2. |
 | [`README.md`](README.md) | the current app. |
 
@@ -68,7 +68,7 @@ is the batch where a human has to check numbers: 47 meals' macros and times, and
   sending the user to another screen to guess.
 - Every count on screen applies every filter except the one whose own label it sits on, and never
   a filter the user cannot see from where they are standing. This is the generalised form of the
-  v1 counter defect in `PROMPTS.md` §2.14.
+  v1 counter defect in `prompts.md` §2.14.
 
 ### Removed
 
@@ -149,12 +149,12 @@ Front end only. No backend, no network calls, no accounts. All data invented and
 Notable fixes made before submission:
 
 - The Find Meals counter ignored the selected ingredients, so it read the same number whether
-  nothing or fourteen things were ticked (`PROMPTS.md` §2.14).
+  nothing or fourteen things were ticked (`prompts.md` §2.14).
 - Whole-dish calories disagreed with whole-dish macros on 9 of the 11 meals, because the
-  per-serving figure was rounded before being multiplied (`PROMPTS.md` §2.17).
+  per-serving figure was rounded before being multiplied (`prompts.md` §2.17).
 - The match bar's four fill colours measured 1.05:1 to 1.19:1 against the card and did not order
   correctly by lightness; four palette tokens failed WCAG 1.4.3 across about a dozen uses
-  (commit `43d3345` — this one is not in `PROMPTS.md`, whose log deliberately stops at the first
+  (commit `43d3345` — this one is not in `prompts.md`, whose log deliberately stops at the first
   push).
 - `tools/build_preview.py` carried the repository's only external URLs and its only real company
   name, in a project whose own guardrails forbade both. Removed.

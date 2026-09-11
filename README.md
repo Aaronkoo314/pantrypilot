@@ -9,12 +9,12 @@ Built for MGMT 6110 Human-AI Collaboration, Singapore Management University.
 
 ## Coursework documents
 
-- [PROMPTS.md](PROMPTS.md) - the working log of how this was built, including the prompts and steps that went wrong.
+- [prompts.md](prompts.md) - the working log of how this was built, including the prompts and steps that went wrong.
 - [REFLECTION.md](REFLECTION.md) - the five-question reflection, plus the further-action roadmap.
 - [RANKING-RULES.md](RANKING-RULES.md) - what every rule that filters or orders the meal list does, with its numbers and a named owner. Nothing in v2 is scored.
 - [CHANGELOG.md](CHANGELOG.md) - every version, newest first, and which document describes which.
 
-> **Which version the documents describe.** `PROMPTS.md` and `REFLECTION.md` describe the state
+> **Which version the documents describe.** `prompts.md` and `REFLECTION.md` describe the state
 > tagged `v1-submitted`, which is what was handed in for Problem Set 1; they are the graded
 > artefacts and are not rewritten. `RANKING-RULES.md` and this file describe the current app.
 > `git checkout v1-submitted` gives you exactly the graded version, and
