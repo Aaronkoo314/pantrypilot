@@ -1217,3 +1217,89 @@ button {
     font-size: 34px;
   }
 }
+
+/* ---------------- sourced nutrition panel ----------------
+   Set apart from the invented figures above it on purpose: this is the one
+   block on the screen whose numbers came from outside our own code, and the
+   reader should be able to see the boundary without reading the caption. */
+
+.sourced-panel {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1.5px solid var(--herb);
+  border-radius: var(--radius-sm);
+  background: var(--herb-soft);
+}
+
+.sourced-panel .group-title {
+  margin-top: 0;
+}
+
+.sourced-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.sourced-chip {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.sourced-chip.is-selected {
+  border-color: var(--herb);
+  background: var(--herb);
+  color: #ffffff;
+}
+
+.sourced-body {
+  min-height: 84px;
+}
+
+/* Loading, empty, refused, unreachable and not-configured all land here. Each
+   says a different thing in words, because a spinner tells the reader nothing
+   about which of them they are looking at. */
+.sourced-state {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.sourced-record {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.sourced-panel .stat-row {
+  margin-bottom: 10px;
+}
+
+.sourced-note {
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.sourced-credit {
+  margin: 10px 0 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sourced-panel .disclaimer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #c3ddcb;
+}

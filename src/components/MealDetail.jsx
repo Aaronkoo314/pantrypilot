@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CUISINE_BY_ID, WEIGHT_BAND_BY_ID } from '../data/pantryData.js';
 import { formatMinutes, formatPrice, scaleMeal } from '../utils/mealMatching.js';
+import SourcedNutrition from './SourcedNutrition.jsx';
 
 const MIN_SERVINGS = 1;
 const MAX_SERVINGS = 12;
@@ -228,6 +229,8 @@ export default function MealDetail({ meal, ownedIds, initialServings, onBack }) 
         <p className="disclaimer">
           Invented sample figures for this prototype. Not health or medical advice.
         </p>
+
+        <SourcedNutrition ingredients={scaled.ingredients} />
       </section>
 
       <section className="card" aria-labelledby="steps-heading">
