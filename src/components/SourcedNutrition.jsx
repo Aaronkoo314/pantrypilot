@@ -22,21 +22,31 @@ import { useEffect, useState } from 'react';
 function derivationLine(nutrients) {
   const groups = new Map();
 
-  for (const [label, key] of [['protein', 'protein'], ['carbs', 'carbohydrate'], ['fat', 'fat']]) {
+  // "carbs" is one nutrient with a plural name, so the verb cannot be chosen
+  // from the count alone.
+  const LABELS = [
+    { key: 'protein', label: 'protein', plural: false },
+    { key: 'carbohydrate', label: 'carbs', plural: true },
+    { key: 'fat', label: 'fat', plural: false },
+  ];
+
+  for (const { key, label, plural } of LABELS) {
     const entry = nutrients[key];
     if (!entry || !entry.derivation) continue;
     const short = entry.derivation.split(';')[0].trim().toLowerCase();
     if (!groups.has(short)) groups.set(short, []);
-    groups.get(short).push(label);
+    groups.get(short).push({ label, plural });
   }
 
   if (groups.size === 0) return null;
 
   return [...groups.entries()]
-    .map(([derivation, labels]) => {
+    .map(([derivation, items]) => {
+      const labels = items.map((i) => i.label);
       const names =
         labels.length > 1 ? `${labels.slice(0, -1).join(', ')} and ${labels.at(-1)}` : labels[0];
-      return `${names} ${labels.length > 1 ? 'are' : 'is'} ${derivation}`;
+      const verb = labels.length > 1 || items[0].plural ? 'are' : 'is';
+      return `${names} ${verb} ${derivation}`;
     })
     .join('; ');
 }
