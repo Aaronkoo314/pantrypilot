@@ -549,3 +549,139 @@ const balancePoints = (1 - Math.min(Math.abs(fatShare - 0.3) / 0.3, 1)) * 20;
 still did not do what I wanted it to do, because a list of six declarations in the first reply of a
 long session is read the way a terms-of-service dialog is read. The fuller version of this argument
 is in `REFLECTION.md`.
+
+---
+
+# Problem Set 2 — putting a real back end behind it
+
+**Continued 11 September 2026.** Same tool, Claude Code (Opus 5). Everything above this line is
+the v1 log and stops at the first push, as it says. Everything below is the back end.
+
+One change of tool worth declaring up front: Problem Set 1's master prompt was drafted in ChatGPT
+and the build was done in Claude Code. Problem Set 2 has no ChatGPT stage at all. The AI Studio
+session from Problem Set 1 is no longer retrievable, which is the practical reason this work
+continued in Claude Code rather than moving back — a prompt log I cannot quote from is not a log.
+
+## 5.1 Reading the brief before touching anything
+
+> 好的帮我解读一下
+
+I gave it the Problem Set 2 HTML file and asked for a reading of it rather than a plan. This was
+the right order and I nearly did not do it. The most useful thing it surfaced was not a technical
+requirement: it was that panel 1 asks you to name three claims your product cannot support, and
+that **deleting one is an explicitly acceptable answer**. I had assumed the assignment was "add an
+API" and it is not — it is "stop your screen from lying", and an API is only one of three repairs.
+
+Action: kept. Nothing was built for another two hours.
+
+## 5.2 Calling six candidate sources by hand before writing any code
+
+The brief says this twice, in two different panels, and both times it is the same instruction:
+call the service once by hand and paste the real answer into the prompt, because an agent asked
+to guess field names will invent something reasonable, and reasonable is not correct.
+
+I ran six candidates in parallel — SingStat, data.gov.sg, Open-Meteo, USDA FoodData Central,
+Open Food Facts and Nager.Date — each scouted and then re-tested by a second, sceptical pass whose
+only job was to find the reason I would have to abandon the source on Monday night.
+
+That second pass earned its keep four times:
+
+- **Open Food Facts was rejected on evidence, not on reputation.** It is free, keyless, https and
+  well documented. It is also a database of *barcodes*, not of *food*: a query for garlic returns
+  a branded falafel product, and one real record it returned describes bread as 14.58 kcal per
+  100 g. Crowd-sourced, uncorrected, and it would have looked fine in a demo.
+- **data.gov.sg was rejected** because the only dataset that fitted is delisted (404
+  `DATASET_DOES_NOT_EXIST`) and frozen at December 2024.
+- **Open-Meteo and Nager.Date were demoted to backups** for a reason I would not have thought of:
+  they can never return nothing. A weather model has a value for every point and every hour, so
+  the "data is empty" state the brief grades **cannot be produced**, only faked with a test flag.
+- **SingStat survived but moved.** It publishes real Singapore retail food prices (table M213761,
+  monthly, no key). The sceptical pass rejected where I meant to put it: telling a cook who has
+  already ticked "rice" that rice costs S$14.64 per 5 kg changes no decision they are about to
+  make. A real number doing decorative work is exactly what panel 1 warns against. The placement
+  that earns its keep is the *missing*-ingredient shopping cost, which answers "is this meal worth
+  a trip to the shop".
+
+Action: chose USDA FoodData Central. Not because the data is better than SingStat's — SingStat is
+more relevant to a Singapore user — but because **SingStat is keyless**, and a keyless source makes
+`keyConfigured` a decoration, makes "search my history for your credential" vacuous, and makes the
+checklist item *"change the variable to something wrong on purpose, redeploy, and look at what your
+user would see"* physically impossible. Half the graded lines this week are about the credential.
+
+## 5.3 The thing that would have shipped a lie
+
+This is the one I want on the record, because it is the failure the lecture described and I only
+avoided it because the brief told me to call the service by hand.
+
+FoodData Central was queried with deliberate gibberish, `zzqqxwv-not-a-real-food-99`:
+
+```
+HTTP/1.1 200 OK
+{"totalHits":111423,
+ "foods":[{"description":"Oats (Includes foods for USDA's Food Distribution Program)",
+           "dataType":"SR Legacy", "foodNutrients":[{"nutrientId":1003,"value":16.9}]}]}
+```
+
+**A success code, a hundred and eleven thousand hits, and confident macros for a food nobody
+asked about.** `requireAllWords` defaults to `false`, so the search fuzzy-matches and always finds
+something. PantryPilot has ingredients like laksa paste, shrimp paste and galangal. Every one of
+them would have printed somebody else's oats on screen, under a USDA citation, with no error
+anywhere.
+
+Worse: the obvious way to wire the "data is empty" state is `if (totalHits === 0)`. That branch
+would have been **dead code** — it can never fire on the default search — so the product would have
+shipped with one of its four required states untestable and a screen that quietly lies.
+
+The fix is one parameter, `&requireAllWords=true`, and it was verified rather than assumed: the
+same gibberish query then returns `{"totalHits":0,"foods":[]}`. The honest empty state only exists
+because of a parameter I would never have known to look for.
+
+**What I had to know to catch this.** Nothing about JavaScript. I had to know that oats are not
+laksa paste — and I had to have queried nonsense on purpose instead of querying chicken, which
+works perfectly and teaches nothing. The check that found it was reading the response, not
+running the code.
+
+## 5.4 Where the agent decided something it should have asked me
+
+The first version of the screen reported **any** non-2xx reply as "USDA FoodData Central refused
+the request". On the local build there is no `/api/` at all, so the fetch 404s — and the screen
+blamed USDA for a request that was never sent.
+
+This is the boundary moving without anybody deciding to move it. It is not a bug in the ordinary
+sense; the code does what it says. It is a *product* decision — who gets blamed when something
+fails — arriving dressed as a status-code branch. It matters because the two situations have
+different owners: a provider refusal is USDA's, and a 404 on our own address is a deployment fault
+of mine that I would then have spent an evening not finding, because the screen was pointing at
+somebody else.
+
+Action: rewritten to key off the `state` our own function reports rather than the HTTP status, with
+a distinct sentence for our own service being down. Six states now, not four.
+
+## 5.5 The order the hygiene had to happen in
+
+`.gitignore` had `*.local`, which catches `.env.local` and does **not** catch a plain `.env` — the
+exact filename `vercel env pull` writes. Committed the rule **before** the key existed rather than
+after, because a credential that reaches git history stays readable after the file is deleted, and
+scanners read fresh public commits within minutes.
+
+Verified rather than assumed: `git log -p --all` over the full history returns zero hits for
+`VITE_`, `AIza`, `AQ.`, `sk-` and `Bearer`. Nine apparent matches were all false positives — CSS
+palette tokens, a quoted syntax error from an old build log, and the npm package `js-tokens`. No
+history rewrite was needed. That is a checkable claim rather than a reassuring one.
+
+The `PROMPTS.md` to `prompts.md` rename needed a temporary name in between, because
+`core.ignorecase` is true in this repository: a direct case-only `git mv` no-ops locally and then
+breaks on GitHub's case-sensitive server. Verified against `git ls-files`, not the Windows
+directory listing, which looks identical either way.
+
+## 5.6 Where I stopped prompting
+
+The dev server will not run. Vite's resolver fails on this machine's mapped `D:` drive —
+`Failed to load url /src/main.jsx (resolved id: D:/GitHub/pantrypilot/src/main.jsx)` — so the JSX
+transform never runs and raw JSX reaches the browser as a syntax error on the first `<`.
+`npm run build` compiles the same files without complaint.
+
+I did not fix this. It is a local path problem that does not exist on Vercel, which builds from a
+clean checkout on Linux, and the brief says to test the function on the Vercel URL anyway. I
+verified the screen against the production build on port 4173 instead and moved on. Chasing it
+would have been an evening spent on a machine, not on a product.
