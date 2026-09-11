@@ -4,3 +4,8 @@ dist
 preview
 .DS_Store
 *.local
+
+# Credentials and local tooling — added for Problem Set 2
+.env*
+.vercel
+.claude/
