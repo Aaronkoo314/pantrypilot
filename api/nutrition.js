@@ -1,5 +1,7 @@
+import { INGREDIENT_BY_ID } from '../src/data/pantryData.js';
+
 /**
- * GET /api/nutrition?ingredient=chicken+breast+raw
+ * GET /api/nutrition?id=chicken-breast
  *
  * Looks one ingredient up in USDA FoodData Central and returns only the fields
  * the meal detail screen prints. The credential is read here and never leaves
@@ -58,14 +60,33 @@ export default async function handler(req, res) {
     });
   }
 
-  const ingredient = String(req.query.ingredient || '').trim();
-  if (!ingredient) {
+  // The caller names an ingredient by id, and the text we send upstream comes
+  // from our own data rather than from the request. Two reasons, and the second
+  // is the important one:
+  //
+  // 1. No caller-supplied text reaches the upstream query string at all, so
+  //    there is nothing to inject with.
+  // 2. The set of legitimate queries here is CLOSED and small — the 93
+  //    ingredients this product knows about. Anything outside it is refused
+  //    before the credential is touched. Without this, /api/nutrition is an
+  //    open proxy: a stranger varying a free-text parameter defeats the edge
+  //    cache on every request, and each miss spends a slice of an hourly quota
+  //    that belongs to me. This assignment's peer-review step explicitly invites
+  //    classmates to try to break the product, so that is not a hypothetical.
+  //
+  // Bounded at 93 distinct upstream calls, all of them cacheable.
+  const id = String(req.query.id || '').trim();
+  const known = id ? INGREDIENT_BY_ID[id] : null;
+
+  if (!known) {
     res.setHeader('Cache-Control', 'no-store');
     return res.status(400).json({
       state: 'bad-request',
-      error: 'Pass an ingredient, for example /api/nutrition?ingredient=garlic.',
+      error: 'Pass a known ingredient id, for example /api/nutrition?id=garlic.',
     });
   }
+
+  const ingredient = known.name;
 
   // requireAllWords=true is load-bearing, not a refinement. Without it the
   // default fuzzy search NEVER returns nothing: asking for a nonsense string

@@ -1,18 +1,6 @@
 import { useEffect, useState } from 'react';
 
 /**
- * The one panel on this screen whose numbers are not ours.
- *
- * Everything above it — this meal's protein, carbs, fat and calories — is
- * invented sample data. This panel fetches one real published record for one
- * ingredient through our own /api/nutrition, and says plainly that the rest is
- * still an estimate. It is a provenance feature, not a nutrition feature: the
- * useful part is knowing which number on the screen you can check.
- *
- * The four states below are decided here rather than left to a spinner,
- * because three of the four are situations the reader can act on.
- */
-/**
  * USDA's derivation strings are long and repeat themselves across nutrients —
  * "manufacturer supplied; calculated by manufacturer or unknown if analytical
  * or calculated", three times over, is not a sentence anybody reads. The part
@@ -51,9 +39,25 @@ function derivationLine(nutrients) {
     .join('; ');
 }
 
+/**
+ * The one panel on this screen whose numbers are not ours.
+ *
+ * Everything above it — this meal's protein, carbs, fat and calories — is
+ * invented sample data. This panel fetches one real published record for one
+ * ingredient through our own /api/nutrition, and says plainly that the rest is
+ * still an estimate. It is a provenance feature, not a nutrition feature: the
+ * useful part is knowing which number on the screen you can check.
+ *
+ * The four states below are decided here rather than left to a spinner,
+ * because three of the four are situations the reader can act on.
+ */
 export default function SourcedNutrition({ ingredients }) {
-  const [selected, setSelected] = useState(() => ingredients[0]?.ingredient?.name || '');
+  const [selected, setSelected] = useState(() => ingredients[0]?.id || '');
   const [status, setStatus] = useState('loading');
+  // `selected` is an id so that nothing the caller types reaches the upstream.
+  // The reader still needs to see the ingredient's name.
+  const selectedName =
+    ingredients.find((line) => line.id === selected)?.ingredient?.name || selected;
   const [payload, setPayload] = useState(null);
 
   useEffect(() => {
@@ -64,7 +68,7 @@ export default function SourcedNutrition({ ingredients }) {
     setStatus('loading');
     setPayload(null);
 
-    fetch(`/api/nutrition?ingredient=${encodeURIComponent(selected)}`)
+    fetch(`/api/nutrition?id=${encodeURIComponent(selected)}`)
       .then(async (reply) => {
         const body = await reply.json().catch(() => null);
         if (!live) return;
@@ -107,30 +111,27 @@ export default function SourcedNutrition({ ingredients }) {
       </h3>
 
       <div className="sourced-picker" role="group" aria-label="Choose an ingredient to look up">
-        {ingredients.map((line) => {
-          const name = line.ingredient.name;
-          return (
-            <button
-              key={line.id}
-              type="button"
-              className={`sourced-chip${name === selected ? ' is-selected' : ''}`}
-              aria-pressed={name === selected}
-              onClick={() => setSelected(name)}
-            >
-              {name}
-            </button>
-          );
-        })}
+        {ingredients.map((line) => (
+          <button
+            key={line.id}
+            type="button"
+            className={`sourced-chip${line.id === selected ? ' is-selected' : ''}`}
+            aria-pressed={line.id === selected}
+            onClick={() => setSelected(line.id)}
+          >
+            {line.ingredient.name}
+          </button>
+        ))}
       </div>
 
       <div className="sourced-body" aria-live="polite">
         {status === 'loading' && (
-          <p className="sourced-state">Checking USDA FoodData Central for {selected}…</p>
+          <p className="sourced-state">Checking USDA FoodData Central for {selectedName}…</p>
         )}
 
         {status === 'empty' && (
           <p className="sourced-state">
-            USDA FoodData Central publishes no record matching “{selected}”, so this ingredient has
+            USDA FoodData Central publishes no record matching “{selectedName}”, so this ingredient has
             no sourced figure. Everything shown for it above is our own estimate.
           </p>
         )}
