@@ -76,6 +76,14 @@ export default async function handler(req, res) {
     'https://api.nal.usda.gov/fdc/v1/foods/search' +
     '?query=' + encodeURIComponent(ingredient) +
     '&requireAllWords=true' +
+    // Laboratory records only. Without this the search is dominated by Branded
+    // records, which are manufacturer label data rather than measurements: the
+    // first result for "garlic" was a packaged product reporting 0 g of protein
+    // and 167 kcal, because the label rounded to zero on a small serving and
+    // FoodData Central scaled that up to 100 g. Real garlic is 6.6 g of protein
+    // and 143 kcal. Foundation and SR Legacy are the analysed reference sets,
+    // and restricting to them took "garlic" from thousands of hits to eight.
+    '&dataType=' + encodeURIComponent('Foundation,SR Legacy') +
     '&pageSize=1' +
     '&api_key=' + encodeURIComponent(key.trim());
 
@@ -138,6 +146,9 @@ export default async function handler(req, res) {
       description: food.description || null,
       dataType: food.dataType || null,
       publishedDate: food.publishedDate || null,
+      // fdc.nal.usda.gov publishes every record at a stable address, so the
+      // reader can open the one we cited rather than take our word for it.
+      url: food.fdcId ? `https://fdc.nal.usda.gov/food-details/${food.fdcId}/nutrients` : null,
     },
     nutrients: {
       protein: readNutrient(nutrients, NUTRIENT_IDS.protein),

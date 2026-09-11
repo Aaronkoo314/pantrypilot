@@ -175,9 +175,18 @@ export default function SourcedNutrition({ ingredients }) {
 
             <p className="sourced-credit">
               Source: U.S. Department of Agriculture, Agricultural Research Service. FoodData
-              Central, fdc.nal.usda.gov — record {payload.record.fdcId}
+              Central, fdc.nal.usda.gov — record{' '}
+              {payload.record.url ? (
+                <a href={payload.record.url} target="_blank" rel="noreferrer">
+                  {payload.record.fdcId}
+                </a>
+              ) : (
+                payload.record.fdcId
+              )}
               {payload.record.dataType ? `, ${payload.record.dataType}` : ''}
               {payload.record.publishedDate ? `, published ${payload.record.publishedDate}` : ''}.
+              We ask FoodData Central for its analysed reference records only, not for packaged
+              products, because label figures are rounded on the pack and go wrong when scaled.
             </p>
           </>
         )}
