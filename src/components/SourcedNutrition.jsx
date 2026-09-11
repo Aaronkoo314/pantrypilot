@@ -12,6 +12,35 @@ import { useEffect, useState } from 'react';
  * The four states below are decided here rather than left to a spinner,
  * because three of the four are situations the reader can act on.
  */
+/**
+ * USDA's derivation strings are long and repeat themselves across nutrients —
+ * "manufacturer supplied; calculated by manufacturer or unknown if analytical
+ * or calculated", three times over, is not a sentence anybody reads. The part
+ * before the first semicolon is the part that matters, so keep that and group
+ * the nutrients that share one rather than repeating it.
+ */
+function derivationLine(nutrients) {
+  const groups = new Map();
+
+  for (const [label, key] of [['protein', 'protein'], ['carbs', 'carbohydrate'], ['fat', 'fat']]) {
+    const entry = nutrients[key];
+    if (!entry || !entry.derivation) continue;
+    const short = entry.derivation.split(';')[0].trim().toLowerCase();
+    if (!groups.has(short)) groups.set(short, []);
+    groups.get(short).push(label);
+  }
+
+  if (groups.size === 0) return null;
+
+  return [...groups.entries()]
+    .map(([derivation, labels]) => {
+      const names =
+        labels.length > 1 ? `${labels.slice(0, -1).join(', ')} and ${labels.at(-1)}` : labels[0];
+      return `${names} ${labels.length > 1 ? 'are' : 'is'} ${derivation}`;
+    })
+    .join('; ');
+}
+
 export default function SourcedNutrition({ ingredients }) {
   const [selected, setSelected] = useState(() => ingredients[0]?.ingredient?.name || '');
   const [status, setStatus] = useState('loading');
@@ -163,13 +192,11 @@ export default function SourcedNutrition({ ingredients }) {
               </p>
             )}
 
-            {payload.nutrients.fat && payload.nutrients.fat.derivation && (
+            {derivationLine(payload.nutrients) && (
               <p className="sourced-note">
-                Fat is {payload.nutrients.fat.derivation.toLowerCase()}
-                {payload.nutrients.protein && payload.nutrients.protein.derivation
-                  ? `; protein is ${payload.nutrients.protein.derivation.toLowerCase()}`
-                  : ''}
-                . USDA publishes which of its figures were measured and which were worked out.
+                How these were obtained — {derivationLine(payload.nutrients)}. USDA publishes which
+                of its figures were measured and which were worked out, and the difference is worth
+                knowing before you rely on one.
               </p>
             )}
 
