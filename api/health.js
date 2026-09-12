@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     // not move, so a non-200 here means our credential or the provider, never
     // a query that happened to miss.
     const url =
-      'https://api.nal.usda.gov.invalid/fdc/v1/food/2646170?format=abridged&api_key=' +
+      'https://api.nal.usda.gov/fdc/v1/food/2646170?format=abridged&api_key=' +
       encodeURIComponent(key.trim());
 
     try {

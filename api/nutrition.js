@@ -94,7 +94,7 @@ export default async function handler(req, res) {
   // failure wearing a success code, and it would put another food's numbers on
   // screen under a USDA citation. With it, a miss is an honest empty result.
   const url =
-    'https://api.nal.usda.gov.invalid/fdc/v1/foods/search' +
+    'https://api.nal.usda.gov/fdc/v1/foods/search' +
     '?query=' + encodeURIComponent(ingredient) +
     '&requireAllWords=true' +
     // Laboratory records only. Without this the search is dominated by Branded
