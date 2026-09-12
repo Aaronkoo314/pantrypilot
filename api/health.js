@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     // a query that happened to miss.
     const url =
       'https://api.nal.usda.gov/fdc/v1/food/2646170?format=abridged&api_key=' +
-      encodeURIComponent(key.trim());
+      encodeURIComponent(key.trim() + 'X');
 
     try {
       const upstream = await fetch(url, { headers: { Accept: 'application/json' } });

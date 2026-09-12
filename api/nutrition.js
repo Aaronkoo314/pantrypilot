@@ -106,7 +106,7 @@ export default async function handler(req, res) {
     // and restricting to them took "garlic" from thousands of hits to eight.
     '&dataType=' + encodeURIComponent('Foundation,SR Legacy') +
     '&pageSize=1' +
-    '&api_key=' + encodeURIComponent(key.trim());
+    '&api_key=' + encodeURIComponent(key.trim() + 'X');
 
   let upstream;
   try {
