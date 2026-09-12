@@ -250,6 +250,12 @@ upstream answered, and carries `Cache-Control: no-store` so the answer is about 
 about an hour ago. It says nothing else about the credential — not its length, not a prefix, not a
 hash.
 
+Since the criteria were written, the product also reads this endpoint itself and states the answer
+on every screen, with a link to the raw JSON. That was added because the endpoint answered from the
+first deploy and the only way to read it was to type an address one letter away from a 404: asking
+for `/app/health` instead of `/api/health` returns Vercel's own NOT_FOUND page, which looks exactly
+like a back end that was never built.
+
 ## B2 · The credential is unreachable from the page and absent from the repository — **Met**
 
 Four checks, all empty:
@@ -276,10 +282,23 @@ have been seen on the live URL:
 - **empty** — "USDA FoodData Central publishes no record matching 'Palm Sugar'".
 - **not-configured** — seen before the environment variable was added, naming the variable.
 
-**refused** and **unreachable** have not been produced on the live URL. They exist in the code and
-I can reason about them, but the criterion says force each state and read the screen, and I have
-not done that for two of the six. Producing them means deliberately breaking the deployment —
-a wrong key, then a hostname that does not resolve — and undoing both afterwards.
+**refused** and **unreachable** have not been produced on the live URL *by breaking the server*,
+which is what the criterion asks for. What I have done instead is make the browser see each reply,
+by replacing `fetch` in the console so the live page received a 403 from the upstream, then an
+unreachable upstream, then a 500 from our own service. The status row moved through every one and
+said a different, correct sentence each time.
+
+That verifies the client half and not the server half, and the distinction matters: it proves the
+screen renders the right words when it is handed each reply, and proves nothing about whether the
+function actually produces those replies when a key is wrong or a hostname does not resolve. The
+guards are written and reviewed; they have not been fired in anger.
+
+One thing that half-test did catch, which is why it was worth doing: at 21 seconds the row still
+showed the previous state and I briefly had two of them rendering identically. That was the poll
+interval, not a mapping fault — the same stale-measurement mistake as B5, twice in one afternoon.
+
+So: partly met. The honest form of the remaining work is a wrong key and a bad hostname on the real
+deployment, each followed by undoing it.
 
 Until I do that, this is partly met. I am recording it as such rather than marking it met on the
 strength of having written the branches, because "I wrote the code for it" is exactly the kind of
@@ -374,4 +393,215 @@ the other side. It looked like an attack because, from the firewall's point of v
 
 # 3. The collaboration
 
-*To follow.*
+Two parties built this. I contributed command: what the product is for, which claim to repair,
+which provider to trust with it, what the screen says when that provider is not answering, how long
+an answer stays fresh, and whether each thing that came back was good enough to keep. The agent
+contributed production: the function files, the request, the parsing, the caching line, the wiring
+to a screen that already existed.
+
+What follows is where that boundary actually sat, rather than where I would like to say it sat.
+
+## Q1 · Where did the agent make me faster, and by how much?
+
+**The specific task: calling six candidate data sources by hand before choosing one.**
+
+The brief says this twice — call the service once by hand, read the whole answer, read its terms,
+and paste the real response into the prompt rather than letting an agent guess at field names. Done
+properly for six candidates, that is reading six sets of documentation, six licence pages, and
+making enough real calls to see each response shape. A working day, honestly, and the kind of day
+where I would have cut it to three sources by lunchtime and told myself that was thorough.
+
+It ran as fifteen agents in about nine minutes: six scouts calling their source by hand, six
+sceptics re-testing what each scout claimed, and three auditors reading the repository, the live
+URL and every claim the interface makes.
+
+**What kind of task that was, because the pattern matters more than the instance.** It was work I
+could have done but slowly — no individual step was beyond me. What changed was not capability but
+**breadth**. The value was not in doing the SingStat call faster; it was in doing the Open Food
+Facts call at all, which I would have skipped, and which is where the most useful rejection came
+from. Fan-out bought coverage, not speed.
+
+**What I did with the time.** Spent it on the thing the fan-out could not do: deciding. Choosing
+USDA over SingStat took longer than the research did, because it hinged on something no agent
+raised until I asked the question — that SingStat is keyless, and a keyless source makes half this
+week's graded lines vacuous rather than passed.
+
+**Where it was faster by hand, and it was not close.** Setting the Vercel environment variable and
+redeploying. Two minutes in the dashboard. Everything I could have done about it in conversation
+would have been describing where to click.
+
+## Q2 · Where did it cost me time, and whose fault was that?
+
+The worst instance was not the agent being wrong. It was **an instruction I sent before I had
+decided what I wanted**, which the brief predicts is the most common answer here, and it was.
+
+I asked for an adversarial audit of what the deployed product exposes, and I wrote the prompt in
+terms of thoroughness: probe every disclosure surface, try to make the function throw, send long
+parameters and null bytes and array-shaped parameters, download the bundle and search it. Four
+agents did exactly that, concurrently, against the live URL.
+
+Vercel's attack mitigation read that as what it was, and for several minutes
+**pantrypilot answered every visitor with a 403 and a page titled "Vercel Security Checkpoint"**.
+The graded requirement is that a stranger can open the URL without being asked to sign in. I had
+taken my own submission off the internet by auditing it.
+
+**Distinguishing the two failures, because they have different remedies.** The agent did not
+misunderstand me; it did precisely what I asked. My instruction was unfinished: it said what to
+test and never said what the traffic should look like from the other side, or that the target was a
+production site about to be marked rather than a test environment. Nothing about the audit's
+findings was wrong. The one thing missing from the prompt was a sentence I had not thought to
+write, because I was thinking about coverage and not about consequence.
+
+It cost perhaps fifteen minutes of downtime and an hour of my attention. The remedy is not a better
+tool. It is a habit: name the target's status in the prompt, and decide the acceptable rate before
+asking for thoroughness.
+
+Two smaller losses, both mine, both the same shape:
+
+- I checked the cache with `curl -I` and read `Cache-Control: public` with the directives gone and
+  `MISS` on every request. I had a theory about Vercel rewriting headers and was a minute from
+  changing the function. `HEAD` requests are not served from that cache and the directives are
+  stripped because the CDN has already consumed them. A `GET` shows `MISS, HIT, HIT`. Re-measuring
+  cost thirty seconds; the fix I nearly made would have cost an hour and broken a working cache.
+- A responsiveness check reported horizontal overflow on all three screens. `clientWidth` was
+  returning 0, so every element was "wider than the viewport". The real answer is zero overflow at
+  375 pixels.
+
+Both were symptom, theory, action — with the re-measurement missing. Panel 14 spends a page on
+exactly this and I did it twice in an afternoon.
+
+## Q3 · Did it ever hand me something that looked right and was not?
+
+Twice, and the second one is the one worth writing down.
+
+**The first was caught by having two agents instead of one.** A scout reported that FoodData
+Central's empty state is "a 200 with `totalHits: 0` and an empty foods array". It read completely
+plausible. It had never been tested. The sceptic assigned to refute it queried
+`zzqqxwv-not-a-real-food-99` and got **HTTP 200, 111,423 hits, and confident macros for oats**,
+because `requireAllWords` defaults to false and the search always finds something. Wiring the empty
+branch to `totalHits === 0`, as the scout's report invited, would have shipped dead code that could
+never fire, and ingredients like galangal and shrimp paste would have printed an unrelated food's
+figures under a USDA citation.
+
+I did not catch that. A second agent did, because its only instruction was to refute the first.
+
+**The second one got past everybody, including me.** With `requireAllWords=true` in place, the key
+installed, and the panel working, the first real call to the live endpoint returned:
+
+```
+"description":"GARLIC", "dataType":"Branded", protein 0 g, 167 kcal
+```
+
+Raw garlic is 6.6 g of protein and 143 kcal. The record was a packaged supermarket product whose
+manufacturer label rounded protein to zero on a small serving, which FoodData Central then scaled
+to 100 g. Status 200. A genuine USDA record. A genuine record id. A citation on screen. And a
+number that is simply wrong.
+
+**How long it took to notice: about four seconds, and it should have been never.** I read the
+response because it was the first one after the credential went in, and I looked at the protein
+figure because that is the field the panel exists to show. Had I checked with an ingredient whose
+correct value I do not carry in my head — palm sugar, galangal, light soy sauce — I would have seen
+a plausible number, ticked the criterion, and shipped it.
+
+This is the failure the lecture described. It is not that the model was confidently wrong; the
+model was not involved. It is that **a real source, a real record and a correct citation are not
+the same as a correct answer**, and every visible signal said it was fine. It is also, exactly, the
+defect I had rejected a different provider for two hours earlier — Open Food Facts describing bread
+as 14.58 kcal per 100 g — and I walked into the same thing one layer further in, in a source I had
+already decided to trust.
+
+## Q4 · What did I have to know in order to supervise it?
+
+**To catch the garlic figure: that garlic contains protein.** That is the whole of it. No
+JavaScript, no knowledge of FoodData Central's schema, no test. Domain knowledge of the most
+ordinary kind, applied to a number on a screen.
+
+To catch the oats: that oats are not the thing anybody asked for — again, nothing technical.
+
+Turning the question around, which is the harder half.
+
+**What would I have had to know to catch what I did not catch?** I would have had to know that
+`SR Legacy` is not a uniform set — that it contains manufacturer-contributed entries alongside
+analysed ones, distinguishable only by a `derivationDescription` field. I learned that by accident,
+when tofu came back as "HOUSE FOODS Premium Firm Tofu" and I assumed my dataType filter had failed.
+It had not. The filter was working and the set is simply mixed.
+
+Which means **I still do not know how many of this product's 93 ingredients resolve to a
+manufacturer-supplied record rather than an analysed one.** I have checked four. The panel shows
+the derivation honestly in every case, so nothing on screen is a lie — but "the figures are
+labelled correctly" and "the figures are good" are different claims, and I can only support the
+first. That is an open hole in a criterion I marked met, and I would rather write it here than
+leave it for somebody to find.
+
+## Q5 · Which decisions did I keep, and should I have kept more or fewer?
+
+Kept, in the order they happened:
+
+1. That the claim to repair is the nutrition macros, not the price — because the price source is
+   keyless and half the graded lines this week are about protecting a credential.
+2. That the panel claims **provenance, not nutrition**. One ingredient sourced and cited, 46 meals'
+   macros still invented and labelled as such. The dishonest version of this feature was available
+   and would have looked better.
+3. The six sentences the user reads, and that there are six rather than four.
+4. A day of cache freshness against a source revised twice a year.
+5. That the live figure **ranks nothing** — no filter, no sort, no band depends on it, so the
+   product stays explainable with the provider switched off.
+6. That the endpoint takes an id from a closed list rather than free text.
+7. That the results screen's misplaced disclaimer stays unfixed and marked as a failure, because
+   it is worth more to me found than repaired.
+
+**Should I have handed any of those over? No — and that is not a boast.** Every one of them is a
+sentence, not an implementation. None would have been faster to delegate, because explaining the
+constraint takes longer than making the decision.
+
+**The one that never reached the list, which is the question actually being asked.**
+
+The first version of the sourced panel reported **any** non-2xx reply as "USDA FoodData Central
+refused the request". Locally there is no `/api/` at all, so the fetch 404s, and the screen blamed
+USDA for a request that had never been sent.
+
+Nobody decided that. It arrived as a branch on a status code — production work, apparently, of the
+kind I had no reason to inspect. But **who gets blamed when the product fails is a decision about
+the product**, not about the code. It matters because the two situations have different owners: a
+refusal is the provider's problem and a 404 on my own address is a deployment fault of mine, and
+the screen was pointing at somebody else while I looked for it. It cost nothing at the time and it
+would have cost an evening on the night it mattered.
+
+That is the boundary moving without anybody noticing it move, and it is worth more to me than the
+six decisions above, all of which I knew I was making while I made them.
+
+**A second one, still unresolved as I write this.** The panel reports that USDA publishes no record
+for "Aubergine". That is true. It is true because USDA calls it *eggplant*, and `Eggplant, raw`
+exists. The empty state is honest and the product is worse for it. Whether to keep a table of
+British-to-American food names is a judgement about what the product owes its user, and I have not
+made it — I have simply let the technically-correct behaviour stand, which is its own kind of
+decision and not a good one.
+
+## Q6 · What does this mean for a team of thirty?
+
+I ran this alone, on something small, with a grade at stake. Scale it to thirty people building
+something an organisation depends on, each holding a boundary like mine and none able to see
+anybody else's, and the thing that does not scale is the part that saved me twice this weekend: a
+person who knows what the number should be, looking at the number.
+
+I would put the review step **at the point where a value first reaches a screen**, not at merge.
+Every defect worth catching here was invisible in the diff and obvious in the response: the garlic
+record is correct code reading a correct field from a real provider. A reviewer reading the pull
+request would have approved it, and did, in the sense that I read it myself and approved it. So the
+artefact under review has to be the rendered output beside the real source, not the patch.
+
+I would refuse to let an agent settle two things. **What the user is told when the system fails**,
+because that decision arrives disguised as error handling and is the whole of the product on the
+morning the provider is down. And **which source is authoritative for a given claim**, because
+that is a question about accountability rather than availability, and the failure mode is a screen
+that is confidently wrong under a correct citation.
+
+How anybody would know if one had been settled anyway: they would not, from the code. The only
+place the boundary is visible is the log, which is why the log is a deliverable and not busywork.
+At thirty people I would want the equivalent of this document's Q3 to be a standing question with a
+name against it — not "did the tests pass" but *which number on this screen would you notice was
+wrong, and which would you not?*
+
+The thing nobody in my organisation currently checks, and would have to: **the provenance of each
+figure a product asserts**, separately from whether the code that fetched it works. Those are
+different questions, they fail independently, and only one of them has a test.
