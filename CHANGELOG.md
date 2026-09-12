@@ -10,7 +10,8 @@ MGMT 6110 Problem Set 1.
 | Document | Describes |
 | --- | --- |
 | [`REFLECTION.md`](REFLECTION.md) | v1 as submitted. It is the graded artefact and is not rewritten. |
-| [`prompts.md`](prompts.md) | v1 as submitted, from the first prompt to the first push. Same. |
+| [`prompts.md`](prompts.md) | **both problem sets, in one history.** Sections 1-4 are v1 as submitted and are not rewritten; section 5 is the Problem Set 2 back end. |
+| [`assessment.md`](assessment.md) | **the current app.** Problem Set 2's criteria, marking and collaboration assessment. |
 | [`RANKING-RULES.md`](RANKING-RULES.md) | **the current app.** Rewritten for v2. |
 | [`README.md`](README.md) | the current app. |
 
@@ -21,6 +22,76 @@ git checkout v1-submitted
 npm install
 npm run dev
 ```
+
+---
+
+## v3 — a real back end, for Problem Set 2
+
+*The first version of PantryPilot that depends on something outside this repository. One figure on
+one screen is now published by somebody else, and the rest of the product had to learn what to say
+when that somebody is not answering.*
+
+### Added
+
+- **Two serverless functions at `api/`**, at the repository root beside `package.json`, which is
+  the only place Vercel runs them. `api/nutrition.js` returns one ingredient's published nutrient
+  record from USDA FoodData Central. `api/health.js` reports whether the credential is configured
+  and what the upstream answered, and nothing else about the credential.
+- **A sourced nutrition panel** on the meal detail screen, beneath the invented macros, where the
+  contrast is the point. It cites the record by id with a link to it, states whether USDA measured
+  each figure or worked it out, and says that every other nutrition number on the screen is our own
+  estimate.
+- **A service status row** on every screen, reading `/api/health` on mount and every minute after.
+  It states in one line whether the live lookup is working and links to the raw endpoint. It
+  reports its own failure rather than disappearing, because a status line that vanishes when things
+  break is worse than none.
+- **Six user-facing states** where a spinner would have been: loading, the source having no record,
+  the provider refusing, the provider unreachable, no credential configured, and our own service
+  down. The brief asked for four. The fifth and sixth exist because the first version reported a
+  404 from our own address as "USDA refused the request", which blames the wrong party.
+- **`assessment.md`** — twelve criteria written and committed before any marking, the product
+  marked against them with evidence, and the collaboration assessed.
+
+### Changed
+
+- `PROMPTS.md` renamed to `prompts.md` and continued rather than restarted, so both problem sets
+  sit in one history. The rename went through a temporary name because `core.ignorecase` is true in
+  this repository, where a direct case-only `git mv` no-ops locally and then breaks on GitHub.
+- `.gitignore` gained `.env*` and `.vercel`, committed **before** the credential existed. A key
+  that reaches git history stays readable after the file is deleted.
+- README and `RANKING-RULES.md` corrected where Problem Set 2 falsified them. "Front end only. No
+  backend" and "No network calls of any kind" were both true until this version and are not now.
+  `RANKING-RULES.md` gained a tenth section saying why the live figure deliberately ranks nothing.
+
+### Fixed
+
+- **FoodData Central answers nonsense with a success code.** Its search defaults to
+  `requireAllWords=false`, so a query of pure gibberish returned HTTP 200, 111,423 hits and
+  confident macros for oats. The obvious empty-state test, `totalHits === 0`, is therefore dead
+  code that can never fire, and ingredients like galangal would have printed an unrelated food's
+  figures under a USDA citation. `requireAllWords=true` makes a miss return an honest empty.
+- **The first live call still returned the wrong thing.** Garlic came back as a Branded record —
+  a packaged product whose label rounded protein to zero on a small serving, scaled up to 100 g.
+  Status 200, a real record id, a real citation, protein 0 g. Raw garlic is 6.6 g.
+  `dataType=Foundation,SR Legacy` restricts the search to analysed reference records.
+- **`/api/nutrition` was an open proxy over a metered credential.** It took arbitrary text and
+  passed it upstream; Vercel's edge cache keys on the full URL, so a stranger varying the parameter
+  missed the cache every time and spent a slice of an hourly quota of 1,000. It now takes an
+  ingredient id validated against the catalogue before the credential is read, which also means no
+  caller-supplied text reaches the upstream query string at all. Bounded at 93 cacheable queries.
+
+### Note on what this version cost to verify
+
+Two of the three defects above were found by reading a response rather than by running the code,
+and neither would have been caught by a test that asserted the code does what it says. The check
+that found the garlic figure was knowing that garlic has protein in it.
+
+A third thing was learned the expensive way and is recorded in `assessment.md` B6: an audit run
+against the live URL sent enough concurrent probe traffic to trip Vercel's attack mitigation, and
+the site served a challenge page with a 403 to every visitor for several minutes. The graded
+requirement is that a stranger can open the URL without being asked to sign in. Nothing in the code
+was at fault; the fault was pointing a fan-out of probes at a production site that was about to be
+marked.
 
 ---
 

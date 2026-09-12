@@ -15,6 +15,12 @@ blends, nothing that can quietly reorder the list behind the choice the user mad
 
 Nothing here is nutrition, dietary or medical advice, and no price here is a real price.
 
+**One exception, added for Problem Set 2, and it is not a ranking rule.** The meal detail screen
+now shows one ingredient's published nutrient record fetched live from USDA FoodData Central. It
+is cited on screen, it does not enter any filter, any sort, any count or any band, and nothing in
+this document depends on it. Everything ranked or filtered below is still computed from the
+invented data. Section 10 says why it was deliberately kept out of the ranking.
+
 ---
 
 ## 1. What the app is built on
@@ -27,8 +33,10 @@ Nothing here is nutrition, dietary or medical advice, and no price here is a rea
 | Price per serving | S$1.39 to S$15.33, median S$5.50 |
 | Vegetarian meals | 14 of 47 |
 
-Five values on every meal are **derived from the recipe and never authored**: calories, total time,
-the weight band, the vegetarian flag and the price. That is the most important property in the data
+Five values on every meal are **derived from the invented recipe data and never authored**:
+calories, total time, the weight band, the vegetarian flag and the price. Derived from our own
+data, not fetched — the one live figure in the product is displayed beside these and never feeds
+them. That is the most important property in the data
 model, because it means a label on a card cannot drift away from the figure printed beside it. v1
 derived calories from the macros but rounded them to the nearest 5, and its whole-dish figures
 disagreed with its whole-dish macros on 9 of its 11 meals as a result.
@@ -144,7 +152,8 @@ the same invariant as calories per person**. That is what lets the detail screen
 this cost me tonight" as well as "what does this cost each".
 
 **The prices are invented.** No shop is named, implied, or surveyed, and the app says so on both
-screens that show a figure.
+screens that show a figure. The live USDA lookup returns nutrition only; it publishes no prices
+and none of these came from it.
 
 ---
 
@@ -224,6 +233,38 @@ records what that cost.
 
 ---
 
+## 10. The live figure, and why it ranks nothing
+
+`api/nutrition.js` · `src/components/SourcedNutrition.jsx`
+
+> **One ingredient's published nutrient record is fetched from USDA FoodData Central and shown on
+> the meal detail screen. It is displayed and cited. It does not enter any filter, sort, count or
+> band.**
+
+This was a decision rather than an omission, so it belongs in this file.
+
+The tempting version is to recompute each meal's calories from real per-ingredient data and let
+the weight band, the calorie sort and the light/medium/heavy filter follow. That would make the
+band mean something. It would also mean **a rule that decides what the user sees depends on a
+third party being up**, and this document's whole premise is that every such rule is stated here
+with its numbers and a named owner. A band that silently changes when a provider has an outage is
+not a rule anybody owns.
+
+So the live figure sits beside the invented one and says which is which. The reader gets the
+comparison; the ranking stays computable from data in this repository, and stays explainable with
+the provider switched off.
+
+**What that costs, stated plainly.** The product now shows one real nutrition figure and 46 meals'
+worth of invented macros, and the honest description of that is a provenance feature rather than a
+nutrition feature. `assessment.md` marks it as such.
+
+**Two things the lookup will not do.** It never guesses: a search that matches nothing returns an
+honest empty rather than the nearest food, and it asks only for analysed reference records, not
+for packaged products whose label figures round to zero. Both were failures first — see
+`prompts.md` §5.3 and `assessment.md` B4.
+
+---
+
 ## Summary for whoever inherits this
 
 | Rule | Derived or authored? | Scores anything? |
@@ -236,10 +277,12 @@ records what that cost.
 | 7 · The five filters | — | No, all exclude |
 | 8 · The four sorts | — | No, plain orderings |
 | 9 · The two counts | Derived, each excluding its own filter | No |
+| 10 · The live USDA figure | **Fetched, not derived** | No — it ranks nothing |
 
 Three things are authored by a person and therefore need a person to check them: **the macros and
 times on all 47 meals**, **the ingredient quantities and base servings on those meals**, and
-**the 93 unit prices**. Everything else in this table is arithmetic on those three — which means a
+**the 93 unit prices**. A fourth now needs watching rather than checking: **the live USDA lookup**,
+which nobody here controls and which can be empty, refused or unreachable on any given evening. Everything else in this table is arithmetic on those three — which means a
 wrong quantity reaches the screen as a wrong price with no arithmetic error anywhere. That is the shortest honest statement of where the human review has to go, and it is
 the same conclusion `REFLECTION.md` reached about v1 — the cheap work is the code, and the
 expensive work is the judgement nobody can delegate.
