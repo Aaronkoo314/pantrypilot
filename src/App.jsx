@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import SplashScreen from './components/SplashScreen.jsx';
+import ServiceStatus from './components/ServiceStatus.jsx';
 import MealSetup from './components/MealSetup.jsx';
 import MealRecommendations from './components/MealRecommendations.jsx';
 import MealDetail from './components/MealDetail.jsx';
@@ -142,6 +143,7 @@ export default function App() {
     return (
       <>
         {cover}
+        <ServiceStatus />
         <MealDetail
           key={activeMeal.id}
           meal={activeMeal}
@@ -157,6 +159,7 @@ export default function App() {
     return (
       <>
         {cover}
+        <ServiceStatus />
         <MealRecommendations
           meals={recommendations}
           counts={counts}
@@ -173,6 +176,7 @@ export default function App() {
   return (
     <>
       {cover}
+      <ServiceStatus />
       <MealSetup
         setup={setup}
         onChange={updateSetup}
