@@ -238,15 +238,64 @@ talks to is its own. Download the built JavaScript bundle and search it for the 
 and for the upstream hostname. Then search the repository's whole history, not only its current
 files. All four must come back empty.
 
-### B3 · Each failure says a different, actable sentence
-A spinner tells this user nothing about which situation they are in, and three of the situations
-are ones they can act on: come back later, pick a different ingredient, tell me it is broken.
+### B3 · Each failure says a different, actable sentence — **Met**
 
-**How to tell:** force each state and read the screen. Loading, the source having no record, the
-provider refusing, the provider being unreachable, and the credential being unset must produce
-different sentences. None may be a spinner, and none may blame a party that was not involved.
+Six states, none of them a spinner. All six have now been produced on the live URL and read there,
+four of them by deliberately breaking the deployment and undoing it again.
 
-### B4 · A near miss is never dressed as an answer
+| State | What the reader is told | How it was produced |
+| --- | --- | --- |
+| **loading** | "Checking USDA FoodData Central for Aubergine…" | a 5-second delay injected in front of `/api/nutrition` |
+| **ok** | `Garlic, raw · per 100 g` — 6.62 g protein, and which figures USDA measured | normal operation |
+| **empty** | "USDA FoodData Central publishes no record matching 'Aubergine', so this ingredient has no sourced figure." | an ingredient USDA does not hold under that name |
+| **refused** | "USDA FoodData Central refused the request (status 403). …This is our problem to fix, not yours." | commit `f3512c4`, reverted by `4e66f57` |
+| **unreachable** | "We could not reach USDA FoodData Central at all… **Try again in a few minutes.**" | commit `2d36c4d`, reverted by `f7e8637` |
+| **not-configured** | "This copy of PantryPilot has no credential configured…" | seen before the variable was added |
+
+**The two deliberate breaks, and what each proved.**
+
+*Unreachable* pointed the upstream at `api.nal.usda.gov.invalid` — `.invalid` is reserved by
+RFC 2606 and can never resolve, so a production function could not accidentally carry a credential
+to a stranger's host. `/api/health` reported `keyConfigured: true, upstreamStatus: "unreachable"`
+and the function returned **502**.
+
+*Refused* sent a deliberately corrupted credential. I did this by appending a character to the key
+on the way out rather than by editing the Vercel variable, which the checklist's literal wording
+suggests. Same observable — a genuine 403 from USDA — with the real key never altered, which
+matters because the variable is stored as a Secret and cannot be read back: a value retyped from
+memory into that field is a credential lost. The undo is a `git revert` visible in the history
+rather than my word that I put it back.
+
+`/api/health` reported `keyConfigured: **true**, upstreamStatus: 403`, and this is the point of the
+whole exercise. Those two failures are indistinguishable from outside: a missing variable is sent
+as the string "undefined" and the provider refuses it exactly as it refuses a wrong value. The
+health endpoint is the only thing that separates *add the variable and redeploy* from *re-copy the
+value and check for a trailing space*.
+
+**The two sentences differ in the way that matters.** Refused says the fault is ours and waiting
+will not help. Unreachable says to come back in a few minutes, because there it will. A single
+"something went wrong" would have collapsed two different pieces of advice into none.
+
+**Both breaks are undone and verified**, not remembered:
+
+```
+/api/health                  → {"keyConfigured":true,"upstreamStatus":200}
+/api/nutrition?id=garlic     → ok · Garlic, raw · Foundation · protein 6.62 g
+/api/nutrition?id=palm-sugar → empty · totalHits 0
+/                            → 200
+```
+
+and the working tree contains no corrupted key site. The history shows each break immediately
+followed by its revert, which is a stronger claim than a tidy diff would have been.
+
+**One thing the breaks caught that was not about the product.** Reading the screen after the first
+revert, the panel still said "refused". I had a theory about caching before I checked. The server
+was fine; my test script used `?.click()` throughout, the page was already on a screen where none
+of those elements existed, every step no-opped silently, and I read a panel that had been sitting
+in the DOM since the break. Optional chaining turned three failures into no output at all. The
+re-run asserts each step and prints whether it found the element.
+
+## B4 · A near miss is never dressed as an answer
 The product asks the source for things like galangal and palm sugar, which it may not hold. The
 temptation a search API creates is to show the closest thing it found, under a citation, as though
 it were the thing asked for.
@@ -282,7 +331,7 @@ command I ran or the file and line I read, so that somebody else can get the sam
 criterion is not met I have said so rather than softening it, and two of the entries below record
 faults that were mine rather than the product's.
 
-**Summary: seven met, four partly met, one not tested.**
+**Summary: eight met, three partly met, one not tested.**
 
 | | Criterion | Verdict |
 | --- | --- | --- |
@@ -294,7 +343,7 @@ faults that were mine rather than the product's.
 | F6 | No claim of dietary or medical authority | Met |
 | B1 | Somebody who is not me can tell whether the service is up | Met |
 | B2 | The credential is unreachable from the page and absent from the repository | Met |
-| B3 | Each failure says a different, actable sentence | **Partly met** |
+| B3 | Each failure says a different, actable sentence | Met |
 | B4 | A near miss is never dressed as an answer | Met |
 | B5 | The source is asked no more often than it actually changes | Met |
 | B6 | A stranger cannot spend my quota | **Partly met** |

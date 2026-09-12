@@ -685,3 +685,35 @@ I did not fix this. It is a local path problem that does not exist on Vercel, wh
 clean checkout on Linux, and the brief says to test the function on the Vercel URL anyway. I
 verified the screen against the production build on port 4173 instead and moved on. Chasing it
 would have been an evening spent on a machine, not on a product.
+
+## 5.7 The deliberate breaks, and the one that broke my test instead
+
+The checklist asks you to see the screen in the refused and unreachable cases by breaking the
+deployment on purpose. Two prompts, two reverts, and one lesson that was not about the product.
+
+**On how to break the credential.** The checklist says to change the variable to something wrong.
+I did it in the code instead, appending a character to the key on the way out, because the Vercel
+variable is stored as a Secret and cannot be read back — so editing it means retyping a 40-character
+value from memory to restore it, and getting that wrong loses the key. The observable is identical,
+a genuine 403 from USDA, and the undo is a `git revert` in the history rather than my word.
+
+Action: kept, and written into `assessment.md` B3 as a decision rather than as a shortcut, because
+it departs from the literal instruction and the reason belongs on the record.
+
+**On the hostname.** `.invalid` rather than any plausible-looking domain. RFC 2606 reserves it, so
+it can never be registered. A made-up hostname works today and could resolve to somebody else's
+machine after they register it — and a deployed function would then carry the credential there.
+
+**The thing that actually cost me time.** After the first revert I reloaded the screen and the panel
+still said "refused". I had a theory about edge caching within about five seconds. The server was
+fine: a fetch from that same tab returned 200 and `Garlic, raw`.
+
+The fault was in my own test script. It walked the app with `document.querySelector('.splash')?.click()`
+and the same optional chaining on the next two steps, and the page was already on a screen where
+none of those elements existed. All three steps no-opped, silently, and I read a panel that had been
+sitting in the DOM since the break. **The `?.` turned three failures into no output at all**, which
+is the same shape as everything else this weekend caught me on: the system reported success and was
+wrong, and the check that would have told me was an assertion I had not written.
+
+The re-run asserts each step and prints whether it found the element. `findBtn:true, card:true,
+garlicChip:true` is now part of the evidence rather than an assumption behind it.
