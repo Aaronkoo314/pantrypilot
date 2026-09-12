@@ -1054,39 +1054,14 @@ button {
   text-wrap: balance;
 }
 
-.splash-track {
-  width: 168px;
-  height: 4px;
-  margin: 28px 0 0;
-  border-radius: 999px;
-  background: var(--line);
-  overflow: hidden;
-}
+/* The progress bar that used to sit here was deleted for Problem Set 2. It
+   reported the progress of a timer against itself and announced it as the app
+   starting; nothing was loading. See the note in SplashScreen.jsx. */
 
-/* Width comes from state in SplashScreen.jsx - see the note in that file.
-   Deliberately no transition and no keyframe: both are driven by a clock this
-   bar cannot verify, and when that clock is frozen the bar renders at zero
-   width while reporting itself as animating. Stepping every 50ms depends on
-   nothing but the timer that also dismisses the cover. */
-.splash-fill {
-  width: 0;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--paprika-dark);
-}
-
-/* Shown once the bar has visibly moved, gated on the same progress state as
-   the bar itself rather than on a delayed keyframe - a frozen animation clock
-   would otherwise leave this permanently invisible. */
 .splash-skip {
-  margin: 14px 0 0;
+  margin: 28px 0 0;
   font-size: 13px;
   color: var(--ink-faint);
-  visibility: hidden;
-}
-
-.splash-skip-shown {
-  visibility: visible;
 }
 
 /* Anyone asking for less motion is sent straight to the app by
@@ -1372,4 +1347,29 @@ button {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---------------- standing credit ----------------
+   On every screen, not only where a lookup succeeded. USDA asks to be listed
+   as the source of the data, and that request does not lapse when the lookup
+   is empty or refused. */
+
+.site-footer {
+  padding: 20px 16px 32px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.site-footer p {
+  margin: 0 0 8px;
+}
+
+.site-footer p:last-child {
+  margin-bottom: 0;
+}
+
+.site-footer a {
+  color: var(--ink-soft);
 }

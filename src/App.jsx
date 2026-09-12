@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import SplashScreen from './components/SplashScreen.jsx';
 import ServiceStatus from './components/ServiceStatus.jsx';
+import SiteFooter from './components/SiteFooter.jsx';
 import MealSetup from './components/MealSetup.jsx';
 import MealRecommendations from './components/MealRecommendations.jsx';
 import MealDetail from './components/MealDetail.jsx';
@@ -151,6 +152,7 @@ export default function App() {
           initialServings={setup.people}
           onBack={() => setScreen('results')}
         />
+        <SiteFooter />
       </>
     );
   }
@@ -169,6 +171,7 @@ export default function App() {
           onOpenMeal={openMeal}
           onEditSetup={() => setScreen('setup')}
         />
+        <SiteFooter />
       </>
     );
   }
@@ -184,6 +187,7 @@ export default function App() {
         resultCount={counts.setupTotal}
         readyCount={counts.readyForSetup}
       />
+      <SiteFooter />
     </>
   );
 }

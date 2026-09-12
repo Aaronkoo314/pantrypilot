@@ -43,9 +43,11 @@ Built for MGMT 6110 Human-AI Collaboration, Singapore Management University.
    says which of the figures USDA measured and which it worked out. Every other nutrition number
    on the screen stays our own estimate, and the panel says so rather than leaving it inferred.
 
-A cover screen sits above screen 1 for three seconds on arrival, with a progress bar so the wait
-does not read as a freeze. Tap, click or any key skips it, and it is skipped outright for anyone
-whose system asks for reduced motion.
+A cover screen sits above screen 1 for three seconds on arrival, showing the wordmark and nothing
+else. Tap, click or any key skips it, and it is skipped outright for anyone whose system asks for
+reduced motion. It used to carry a progress bar; that was deleted for Problem Set 2, because it
+reported the progress of a timer against itself and announced it to assistive technology as the
+application starting, while nothing was loading. `assessment.md` section 1 has the reasoning.
 
 Time, cuisine and weight stay editable on screen 2, behind the "Time, cuisine and weight"
 disclosure, and edits there write back to screen 1. The Find Meals button carries a live count
@@ -107,7 +109,7 @@ output directory `dist`).
 | `package.json` | React 18 + Vite dependencies and the `dev` / `build` / `preview` scripts. |
 | `vite.config.js` | Standard Vite + React plugin config. |
 | `src/main.jsx` | Mounts `<App />` into `#root` and loads the stylesheet. |
-| `src/components/SplashScreen.jsx` | The cover screen. Three-second hold with a state-driven progress bar, skippable, skipped under reduced-motion. |
+| `src/components/SplashScreen.jsx` | The cover screen. Three-second hold on the wordmark, skippable, skipped under reduced-motion. Asserts nothing: the progress bar it used to carry was deleted for Problem Set 2. |
 | `src/App.jsx` | Root component. Holds setup, filter and screen state, computes the recommendation list, and switches between the three screens without reloading. |
 | `src/data/pantryData.js` | **All invented data except the sourced panel's figures:** 93 ingredients with unit, price and vegetarian flag, and 47 meals across three cuisines with quantities, servings, times, macros, difficulty and category. Calories, weight band, vegetarian status and price are derived here, never authored. |
 | `src/utils/mealMatching.js` | Pure logic: ingredient matching, filtering, sorting, serving scaling, pricing and formatting. |
@@ -118,5 +120,6 @@ output directory `dist`).
 | `src/components/MealCard.jsx` | One meal summary card: name, match line and meter, time, calories, price, servings, tags and missing ingredients. |
 | `src/components/MealDetail.jsx` | Screen 3. Tag row, serving control, have / need ingredient lists with per-line prices, times, cost, nutrition per serving and whole dish, steps and the back button. |
 | `src/components/SourcedNutrition.jsx` | The one panel whose numbers are not ours. Calls `/api/nutrition`, cites the record, and says six different things across loading, empty, refused, unreachable, no credential and our own service being down. |
+| `src/components/SiteFooter.jsx` | The standing credit to USDA FoodData Central, on every screen rather than only where a lookup succeeded, plus the standing statement that everything else is invented. |
 | `src/components/ServiceStatus.jsx` | The standing status row on every screen. Reads `/api/health` on mount and every minute, states in one line whether the live lookup is working, and links to the raw endpoint. |
 | `src/styles.css` | All styling. Mobile-first, warm palette, 48px touch targets on the primary controls; the compact "Clear all" (32px) and the second-level group headers (44px) are the two deliberate exceptions. |

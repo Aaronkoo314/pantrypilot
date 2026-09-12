@@ -10,11 +10,15 @@ front end built for Problem Set 1; this one sets criteria for both halves of the
 PantryPilot against them, and then assesses the collaboration that produced it.
 
 > **On the order these sections were written.** The brief says to write the criteria down before
-> judging anything, so section 1 was committed to this repository on its own, before any marking
-> existed and before the audit that produced several of the marks in section 2 had returned. The
-> commit history is the evidence: section 1 lands in its own commit, section 2 in a later one. I
-> am pointing at that because a list of criteria you pass on every count is a list written after
-> the answer was known, and the only defence against writing one is to fix the list first.
+> judging anything, so section 2 was committed to this repository on its own, before any marking
+> existed and before the audit that produced several of the marks in section 3 had returned. The
+> commit history is the evidence: the criteria land in commit `328c0db` and the marking in
+> `a62d218`, later the same day. I am pointing at that because a list of criteria you pass on every
+> count is a list written after the answer was known, and the only defence against writing one is
+> to fix the list first.
+>
+> Section 1 is the step that came before both, and it is the reason the back end looks the way it
+> does rather than being an API bolted to whichever screen was easiest.
 
 ---
 
@@ -34,7 +38,131 @@ already happening. Every front-end criterion below is downstream of that sentenc
 
 ---
 
-# 1. The criteria
+# 1. Three claims this product could not support
+
+Before deciding what to build, the brief asks you to open your own submission and look at it as a
+stranger would, then finish this sentence three times:
+
+> My screen tells the user **[this claim]**, which right now is **[typed in by me / made up by the
+> agent]**, and to be true it would have to come from **[this source]**.
+
+Doing it honestly took ten minutes and changed what I built. I had assumed the assignment was "add
+an API". It is not. It is *stop your screen from asserting things it cannot support*, and an API is
+only one of three repairs.
+
+The exercise is easier for this product than for most, and not to its credit: PantryPilot's
+guardrails for Problem Set 1 required that every figure be invented, so the whole screen is the
+answer. What took the ten minutes was not finding an unsupported claim. It was working out which
+four of the thirty-odd numbers on screen are *roots* — authored by a person — and which are
+arithmetic performed correctly on top of those. There are exactly four roots: the 93 ingredient
+unit prices, the three macros on each of the 47 meals, the prep and cook minutes, and the difficulty
+label. Everything else is derived. Repairing one root repairs a string of visible claims; repairing
+a derived figure repairs nothing, because it was never the thing that was wrong.
+
+## A · The claim that needs live data — **repaired**
+
+> My screen tells the user **this meal has 14 g of protein, 26 g of carbohydrate and 34 g of fat
+> per serving, and 520 kcal**, which right now is **made up by the agent**, and to be true it would
+> have to come from **a published nutrient database, looked up per ingredient and summed against
+> the recipe's quantities**.
+
+This is the root the back end exists for. It carries seven visible claims: the per-serving macros,
+the whole-dish macros, calories per person, calories in total, the Light/Medium/Heavy band, the
+calorie sort and the weight filter.
+
+**What was actually repaired, stated precisely, because the gap matters.** One ingredient's
+published record is now fetched live from USDA FoodData Central, cited by id on the meal detail
+screen, and shown directly beneath the invented macros so the two can be compared. The meal's own
+macros are still invented. Summing real per-ingredient nutrients across 93 ingredients and 47
+recipes is a different and much larger piece of work, and claiming I had done it would be the exact
+failure this exercise is about.
+
+So the honest description of the feature is **provenance, not nutrition**: it tells the reader
+which figure on the screen can be checked, and says in the same panel that every other one cannot.
+That is a smaller claim than "PantryPilot now has real nutrition data", and it is one the product
+can actually support.
+
+## B · The claim that needs a calculation — **left in place, and labelled**
+
+> My screen tells the user **this recipe is "Easy"**, which right now is **typed in by me**, and to
+> be true it would have to come from **a model of how hard a recipe is for a particular cook, which
+> nobody publishes**.
+
+Difficulty is two values across 47 meals — 27 Easy, 20 Medium — with no third value, no definition
+anywhere on screen, and no filter or sort that uses it. No source in the world publishes it, because
+it is not a fact about the dish. It is a judgement about the reader, and the reader is exactly who
+the product knows nothing about.
+
+The brief's repair for this category is a model call, which it places explicitly out of scope for
+Problem Set 2. So the two honest options were to delete it or to say on screen that it is not
+sourced. I kept it, because unlike the progress bar below it does carry some information — a
+first-time cook scanning a list does get something from it — and the cost of keeping it is a
+sentence rather than a false impression.
+
+**This is the one of the three I am least comfortable with.** "Left in place and labelled" is the
+weakest of the three repairs, and if I were marking this I would push on it.
+
+## C · The claim that should not have been there at all — **deleted**
+
+> My screen tells the user **that the application is starting, on a progress bar counting from 0 to
+> 100 over three seconds**, which right now is **a timer measuring itself**, and to be true it would
+> have to come from **something actually loading, of which there was none**.
+
+The cover screen carried a bar with `role="progressbar"` and `aria-label="Starting"`. There was no
+`fetch`, no `await` and no `async` anywhere in `src/` when it was written. It reported the progress
+of a three-second timer against that same timer and announced it to assistive technology as the
+application loading.
+
+It is the clearest instance in this product of the brief's third category — a number that exists
+because the shape of the screen suggested there should be one. Worse than decorative: a sighted
+user reads it as a stylish wait, while a screen reader is told the application is starting, which
+is a statement about the system's state and was false.
+
+It became untenable rather than merely wrong the moment the product gained a back end. There is now
+a real loading state on the meal detail screen and a real one in the status row, and a product
+cannot have three progress indicators of which one is fictional.
+
+**Deleted, and what the screen does instead:** the cover holds for three seconds showing the
+wordmark and the line "Cook what you already have", and says "Tap to skip" from the first frame
+rather than revealing it once a bar has moved. It asserts nothing. Tap, click or any key dismisses
+it, and anyone whose system asks for reduced motion never sees it.
+
+## The fourth claim, which I did not repair and will not pretend I did
+
+The brief asks for three. There is a fourth, it is the most consumer-facing number in the product,
+and leaving it out of this section would be the kind of tidy omission the exercise exists to catch.
+
+> My screen tells the user **this meal costs S$5.50 a head, and the two items you are missing come
+> to S$4.35**, which right now is **made up by the agent**, and to be true it would have to come
+> from **real Singapore retail food prices**.
+
+That root carries eight visible claims — every ingredient row's price, the shopping cost, price per
+person, the whole-dish total and the Cheapest-first sort.
+
+**A source for it exists and I checked it by hand.** SingStat publishes "Average Retail Prices Of
+Selected Consumer Items, Monthly" (table M213761), updated monthly, no credential required, under
+terms that permit a public derived product.
+
+**I did not use it, for a reason that is about this assignment rather than about the product.**
+SingStat is keyless. A keyless source makes `keyConfigured` a decoration, makes "search my history
+for your credential" vacuous, and makes the checklist item *change the variable to something wrong
+on purpose and see what your user would see* impossible to perform. Roughly half of this week's
+graded lines are about protecting a credential, and a source with no credential passes them
+vacuously rather than actually.
+
+That is an honest reason and it is still a reason about the grade rather than about the cook. A
+second reason is about the product, and I only found it by being argued out of my first placement:
+telling somebody who has already ticked "rice" what rice costs changes no decision they are about
+to make. The placement that would earn its keep is the *missing*-ingredient shopping cost, which
+answers "is this meal worth a trip to the shop" — and that is the version I would build next.
+
+**So the product still prints a money figure that came from nowhere**, on every card and four times
+on every detail screen. It is labelled as invented in both places. It is the largest unsupported
+claim left standing, and this document should say so before somebody else does.
+
+---
+
+# 2. The criteria
 
 Each has a name, a reason it matters to *this* user rather than to users in general, and a test
 somebody who has never spoken to me could run against the live URL and get the same answer I did.
@@ -147,7 +275,7 @@ here is closed and known: it is the 93 ingredients in `src/data/pantryData.js`.
 
 ---
 
-# 2. Marking
+# 3. Marking
 
 Twelve criteria, marked against the live URL on 11 September 2026. The evidence column is the
 command I ran or the file and line I read, so that somebody else can get the same answer. Where a
@@ -391,7 +519,7 @@ the other side. It looked like an attack because, from the firewall's point of v
 
 ---
 
-# 3. The collaboration
+# 4. The collaboration
 
 Two parties built this. I contributed command: what the product is for, which claim to repair,
 which provider to trust with it, what the screen says when that provider is not answering, how long

@@ -4,30 +4,34 @@ import { useEffect, useRef, useState } from 'react';
 const HOLD_MS = 3000;
 /** How long the fade itself takes. Must match the CSS transition on .splash. */
 const FADE_MS = 450;
-/** How often the bar is redrawn. 60 steps over the hold reads as smooth. */
-const TICK_MS = 50;
 
 /**
  * The cover screen.
  *
- * The three-second hold must not read as a frozen app, so the bar under the
- * wordmark is a real progress indicator.
+ * **There used to be a progress bar here, and removing it was the point.**
  *
- * It is driven from state rather than from a CSS animation, and that is a
- * deliberate choice made after watching the CSS version fail. A keyframe
- * animation reported itself as `running` with the right duration while its
- * clock sat at zero, which left the bar at scaleX(0) - invisible and
- * motionless, which is precisely the impression this screen exists to prevent.
- * Driving it from the same timer that dismisses the cover means the two can
- * never disagree: if the environment throttles timers the bar jumps forward
- * instead of sitting still, and it always reaches full exactly as the cover
- * begins to leave.
+ * It carried `role="progressbar"` with `aria-label="Starting"`, and it counted
+ * from 0 to 100 over three seconds. Nothing was starting. There was no fetch,
+ * no await and no async anywhere in `src/` when it was written, so the bar
+ * reported the progress of a timer against itself and announced that to
+ * assistive technology as the app loading. It was the clearest example in this
+ * product of a number that existed because the shape of the screen suggested
+ * one, which Problem Set 2 calls a claim that should not be there at all.
+ *
+ * It became untenable rather than merely wrong once the product gained a real
+ * back end: there is now a genuine loading state on the meal detail screen and
+ * a genuine one in the status row, and a screen cannot have two progress
+ * indicators where only one of them means anything.
+ *
+ * What the screen does instead: it holds for three seconds showing the wordmark
+ * and says "Tap to skip" from the first frame rather than waiting for a bar to
+ * move. The hold is shorter than the patience of anybody who has already
+ * decided to open a cooking app, and it asserts nothing.
  *
  * Skippable by tap, click or any key, and skipped outright for anyone who has
  * asked their system to reduce motion.
  */
 export default function SplashScreen({ onDone }) {
-  const [progress, setProgress] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const finished = useRef(false);
 
@@ -39,7 +43,6 @@ export default function SplashScreen({ onDone }) {
       onDone();
       return;
     }
-    setProgress(1);
     setLeaving(true);
     window.setTimeout(onDone, FADE_MS);
   }
@@ -50,22 +53,13 @@ export default function SplashScreen({ onDone }) {
       return undefined;
     }
 
-    const startedAt = performance.now();
-    const tick = window.setInterval(() => {
-      const elapsed = performance.now() - startedAt;
-      if (elapsed >= HOLD_MS) {
-        window.clearInterval(tick);
-        dismiss();
-        return;
-      }
-      setProgress(elapsed / HOLD_MS);
-    }, TICK_MS);
+    const hold = window.setTimeout(() => dismiss(), HOLD_MS);
 
     const skip = () => dismiss();
     window.addEventListener('keydown', skip);
 
     return () => {
-      window.clearInterval(tick);
+      window.clearTimeout(hold);
       window.removeEventListener('keydown', skip);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,18 +79,7 @@ export default function SplashScreen({ onDone }) {
         </p>
         <p className="splash-line">Cook what you already have</p>
 
-        <div
-          className="splash-track"
-          role="progressbar"
-          aria-label="Starting"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(progress * 100)}
-        >
-          <div className="splash-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
-        </div>
-
-        <p className={`splash-skip ${progress > 0.2 ? 'splash-skip-shown' : ''}`}>Tap to skip</p>
+        <p className="splash-skip">Tap to skip</p>
       </div>
     </div>
   );

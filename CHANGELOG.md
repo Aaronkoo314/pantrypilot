@@ -41,6 +41,10 @@ when that somebody is not answering.*
   contrast is the point. It cites the record by id with a link to it, states whether USDA measured
   each figure or worked it out, and says that every other nutrition number on the screen is our own
   estimate.
+- **A standing credit** to USDA FoodData Central in the footer of every screen, rather than only
+  inside the panel where a lookup had succeeded. The licence asks to be listed as the source of the
+  data, and that request does not lapse when the lookup is empty or refused — which was exactly the
+  case on the four screens a user is most likely to see on a bad evening.
 - **A service status row** on every screen, reading `/api/health` on mount and every minute after.
   It states in one line whether the live lookup is working and links to the raw endpoint. It
   reports its own failure rather than disappearing, because a status line that vanishes when things
@@ -62,6 +66,21 @@ when that somebody is not answering.*
 - README and `RANKING-RULES.md` corrected where Problem Set 2 falsified them. "Front end only. No
   backend" and "No network calls of any kind" were both true until this version and are not now.
   `RANKING-RULES.md` gained a tenth section saying why the live figure deliberately ranks nothing.
+
+### Removed
+
+- **The cover screen's progress bar.** It carried `role="progressbar"` and `aria-label="Starting"`
+  and counted 0 to 100 over three seconds, while nothing loaded — there was no `fetch`, no `await`
+  and no `async` anywhere in `src/` when it was written. It reported the progress of a timer
+  against that same timer and announced it to assistive technology as the application starting.
+  Problem Set 2 calls this the claim that should not be there at all, and deleting it is the
+  repair. It became untenable rather than merely wrong once the product gained two real loading
+  states. The cover now holds on the wordmark and says "Tap to skip" from the first frame.
+
+  The note below, from v2 batch 1, stays as written: it is an accurate record of a real problem
+  with the CSS version and of why the bar was driven from state. It is now a note about something
+  that no longer exists, which is the more useful lesson — the engineering was sound and the
+  feature should not have been there.
 
 ### Fixed
 
